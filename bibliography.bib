@@ -481,3 +481,435 @@ keywords = {Data layout, SIMD architecture, memory energy optimization}
   journal={arXiv preprint arXiv:1802.04730},
   year={2018}
 }
+
+@InProceedings{Kapinchev2015,
+  author          = {Konstantin Kapinchev and Adrian Bradu and Frederick Barnes and Adrian Podoleanu},
+  title           = {GPU implementation of cross-correlation for image generation in real time},
+  year            = {2015},
+  address         = {Cairns, QLD, Australia},
+  pages           = {1--6},
+  publisher       = {IEEE},
+  abstract        = {This paper presents an approach for parallel implementation of cross-correlation using the graphics processing unit (GPU). Cross-correlation is a central digital signal processing (DSP) algorithm with applications in many areas. In many cases in real time systems, a sequential implementation of the cross-correlation creates a performance bottleneck and prevents the systems from reaching the real time criterion. On the other hand, a GPU-based parallel implementation of the cross-correlation offers a solution to this problem. The proposed parallel implementation is integrated in an optical coherence tomography (OCT) system. As a result, the OCT system is able to generate up to 40 en-face images from different depths from semitransparent objects in real time. This number of images provides the necessary information when OCT is used in areas such as ophthalmology, where detailed imagery of the retina, the optic nerve, and other parts of the eye is essential for accurate diagnosis.},
+  date            = {14-16 Dec. 2015},
+  doi             = {10.1109/ICSPCS.2015.7391783},
+  eventdate       = {14-16 Dec. 2015},
+  eventtitleaddon = {Cairns, QLD, Australia},
+  file            = {:Kapinchev2015 - GPU Implementation of Cross Correlation for Image Generation in Real Time.html:URL},
+  isbn            = {978-1-4673-8117-8},
+  journal         = {2015 9th International Conference on Signal Processing and Communication Systems (ICSPCS)},
+  keywords        = {Graphics processing units, Real-time systems, Mathematical model, Computer architecture, Correlation, Digital signal processing, Signal processing algorithms, Digital Signal Processing, Cross-Correlation, Parallel Computing, GPU Computing, CUDA},
+}
+
+@MastersThesis{misko,
+  author = {Michal Bali},
+  school = {Charles University},
+  title  = {Employing GPU to Process Datafrom Electron Microscope},
+  year   = {2020},
+}
+
+@Article{Clark2011,
+  author        = {M. A. Clark and P. C. La Plante and L. J. Greenhill},
+  title         = {Accelerating Radio Astronomy Cross-Correlation with Graphics Processing Units},
+  year          = {2011},
+  month         = jul,
+  abstract      = {We present a highly parallel implementation of the cross-correlation of time-series data using graphics processing units (GPUs), which is scalable to hundreds of independent inputs and suitable for the processing of signals from "Large-N" arrays of many radio antennas. The computational part of the algorithm, the X-engine, is implementated efficiently on Nvidia's Fermi architecture, sustaining up to 79% of the peak single precision floating-point throughput. We compare performance obtained for hardware- and software-managed caches, observing significantly better performance for the latter. The high performance reported involves use of a multi-level data tiling strategy in memory and use of a pipelined algorithm with simultaneous computation and transfer of data from host to device memory. The speed of code development, flexibility, and low cost of the GPU implementations compared to ASIC and FPGA implementations have the potential to greatly shorten the cycle of correlator development and deployment, for cases where some power consumption penalty can be tolerated.},
+  archiveprefix = {arXiv},
+  eprint        = {1107.4264},
+  file          = {:http\://arxiv.org/pdf/1107.4264v2:PDF},
+  keywords      = {astro-ph.IM, cs.CE},
+  primaryclass  = {astro-ph.IM},
+}
+
+@Article{zhang2015,
+  author   = {Lingqi Zhang and Tianyi Wang and Zhenyu Jiang and Qian Kemao and Yiping Liu and Zejia Liu and Liqun Tang and Shoubin Dong},
+  journal  = {Optics and Lasers in Engineering},
+  title    = {High accuracy digital image correlation powered by GPU-based parallel computing},
+  year     = {2015},
+  issn     = {0143-8166},
+  pages    = {7-12},
+  volume   = {69},
+  abstract = {A sub-pixel digital image correlation (DIC) method with a path-independent displacement tracking strategy has been implemented on NVIDIA compute unified device architecture (CUDA) for graphics processing unit (GPU) devices. Powered by parallel computing technology, this parallel DIC (paDIC) method, combining an inverse compositional Gauss–Newton (IC-GN) algorithm for sub-pixel registration with a fast Fourier transform-based cross correlation (FFT-CC) algorithm for integer-pixel initial guess estimation, achieves a superior computation efficiency over the DIC method purely running on CPU. In the experiments using simulated and real speckle images, the paDIC reaches a computation speed of 1.66×105POI/s (points of interest per second) and 1.13×105POI/s respectively, 57–76 times faster than its sequential counterpart, without the sacrifice of accuracy and precision. To the best of our knowledge, it is the fastest computation speed of a sub-pixel DIC method reported heretofore.},
+  doi      = {https://doi.org/10.1016/j.optlaseng.2015.01.012},
+  keywords = {Digital image correlation, Inverse compositional Gauss–Newton algorithm, Parallel computing, Graphics processing unit, Compute unified device architecture},
+  url      = {https://www.sciencedirect.com/science/article/pii/S0143816615000135},
+}
+
+@Article{gpuacro,
+  author = {Jon Peddie},
+  title  = {Is it Time to Rename the GPU?},
+  url    = {https://www.computer.org/publications/tech-news/chasing-pixels/is-it-time-to-rename-the-gpu},
+}
+
+@Article{gpulaunch,
+  author = {NVIDIA},
+  title  = {NVIDIA Launches the World's First Graphics Processing Unit: GeForce 256},
+  url    = {https://web.archive.org/web/20160412035751/http://www.nvidia.com/object/IO_20020111_5424.html},
+}
+
+@TechReport{paper:gpu_history,
+  institution = {University of Belgrade/School of Electrical Engineering, Belgrade, Serbia},
+  title       = {Evolution and Trends in GPU Computing},
+  year        = {2012},
+}
+
+@Book{book:paraproc,
+  author    = {David B. Kirk and Wen-mei W. Hwu},
+  editor    = {Todd Green},
+  publisher = {Elsevier Inc.},
+  title     = {Programming Massively Parallel Processors},
+  year      = {2013},
+}
+
+@TechReport{paper:accelerator,
+  author      = {David Tarditi and Sidd Puri and Jose Oglesby},
+  institution = {Microsoft Research},
+  title       = {Accelerator: Using Data Parallelism to Program GPUs forGeneral-Purpose Uses},
+}
+
+@Misc{pic:crosscorr,
+  author       = {{Wikimedia Commons contributors}},
+  howpublished = {\url{https://commons.wikimedia.org/w/index.php?title=File:Comparison_convolution_correlation.svg&oldid=607616339}},
+  month        = nov,
+  title        = {Visual comparison of convolution, cross-correlationand autocorrelation.},
+  year         = {2021},
+  url          = {https://commons.wikimedia.org/w/index.php?title=File:Comparison_convolution_correlation.svg&oldid=607616339},
+}
+
+@Misc{site:cuda,
+  author       = {Nvidia},
+  howpublished = {\url{https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html}},
+  title        = {{CUDA C++ Programming Guide}},
+  year         = {2022},
+}
+
+@Misc{site:wiki_cross_corr,
+  author       = {{Wikipedia contributors}},
+  howpublished = {\url{https://en.wikipedia.org/w/index.php?title=Cross-correlation&oldid=1065983922}},
+  month        = mar,
+  title        = {Cross-correlation},
+  year         = {2022},
+  url          = {https://en.wikipedia.org/w/index.php?title=Cross-correlation&oldid=1065983922},
+}
+
+@Article{Ventosa2019,
+  author    = {Sergi Ventosa and Martin Schimmel and Eleonore Stutzmann},
+  journal   = {Seismological Research Letters},
+  title     = {Towards the Processing of Large Data Volumes with Phase Cross-Correlation},
+  year      = {2019},
+  month     = may,
+  doi       = {10.1785/0220190022},
+  publisher = {Seismological Society of America ({SSA})},
+}
+
+@TechReport{paper:volta,
+  author      = {NVIDIA},
+  institution = {NVIDIA},
+  title       = {NVIDIA Tesla V100 GPU Architecture: The World's Most Advanced Data Center GPU},
+  year        = {2017},
+}
+
+@PhdThesis{thesis:wang,
+  author = {Wang, Chen},
+  school = {Technological University, Singapore},
+  title  = {Kernel learning for visual perception},
+  year   = {2019},
+}
+
+@Misc{site:nsight,
+  author       = {NVIDIA},
+  howpublished = {\url{https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html}},
+  title        = {{Kernel Profiling Guide}},
+  year         = {2022},
+  url          = {https://web.archive.org/web/20220514025303/https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html},
+}
+
+@Misc{site:cufft,
+  author       = {NVIDIA},
+  howpublished = {\url{https://docs.nvidia.com/cuda/cufft/index.html}},
+  title        = {{cuFFT}},
+  year         = {2023}
+}
+
+@Article{paper:levenstein,
+  author    = {David Bedn{\'{a}}rek and Michal Brabec and Martin Kruli{\v{s}}},
+  journal   = {Information Systems},
+  title     = {Improving matrix-based dynamic programming on massively parallel accelerators},
+  year      = {2017},
+  month     = {mar},
+  pages     = {175--193},
+  volume    = {64},
+  doi       = {10.1016/j.is.2016.06.001},
+  publisher = {Elsevier {BV}},
+}
+
+@Article{khalil2013accelerating,
+  author    = {M.I. Khalil},
+  journal   = {International Journal of Image, Graphics and Signal Processing},
+  title     = {Accelerating Cross-correlation Applications via Parallel Computing},
+  year      = {2013},
+  month     = {oct},
+  number    = {12},
+  pages     = {26--31},
+  volume    = {5},
+  doi       = {10.5815/ijigsp.2013.12.04},
+  publisher = {{MECS} Publisher},
+}
+
+@Article{paper:krulis_3d_block,
+  author    = {David Honz{\'{a}}tko and Martin Kruli{\v{s}}},
+  journal   = {Journal of Real-Time Image Processing},
+  title     = {Accelerating block-matching and 3D filtering method for image denoising on {GPUs}},
+  year      = {2017},
+  month     = {nov},
+  number    = {6},
+  pages     = {2273--2287},
+  volume    = {16},
+  doi       = {10.1007/s11554-017-0737-9},
+  publisher = {Springer Science and Business Media {LLC}},
+}
+
+@Misc{site:cuda_reduction,
+  author       = {NVIDIA},
+  howpublished = {\url{https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/}},
+  month        = feb,
+  title        = {{Faster Parallel Reductions on Kepler}},
+  year         = {2014},
+  url          = {http://web.archive.org/web/20220406040954/https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/},
+}
+
+@Misc{wiki:triangular_numbers,
+  author       = {{Wikipedia contributors}},
+  howpublished = {\url{https://en.wikipedia.org/w/index.php?title=Triangular_number&oldid=1098260469}},
+  note         = {[Online; accessed 16-July-2022]},
+  title        = {Triangular number --- {Wikipedia}{,} The Free Encyclopedia},
+  year         = {2022},
+  url          = {https://en.wikipedia.org/w/index.php?title=Triangular_number&oldid=1098260469},
+}
+
+@InCollection{paper:parameter_optimization,
+  author    = {Ayumu Tomiyama and Reiji Suda},
+  booktitle = {Lecture Notes in Computer Science},
+  publisher = {Springer Berlin Heidelberg},
+  title     = {Automatic Parameter Optimization for Edit Distance Algorithm on {GPU}},
+  year      = {2013},
+  pages     = {420--434},
+  doi       = {10.1007/978-3-642-38718-0_38},
+}
+
+@Misc{site:private_arrays_cuda,
+  author       = {Maxim Milakov},
+  howpublished = {\url{https://developer.nvidia.com/blog/fast-dynamic-indexing-private-arrays-cuda/}},
+  month        = feb,
+  title        = {{GPU Pro Tip: Fast Dynamic Indexing of Private Arrays in CUDA}},
+  year         = {2015},
+  url          = {http://web.archive.org/web/20210724011254/https://developer.nvidia.com/blog/fast-dynamic-indexing-private-arrays-cuda/},
+}
+
+@Misc{wiki:relative_difference,
+  author       = {{Wikipedia contributors}},
+  howpublished = {\url{https://en.wikipedia.org/w/index.php?title=Relative_change_and_difference&oldid=1085142584}},
+  note         = {[Online; accessed 18-July-2022]},
+  title        = {Relative change and difference --- {Wikipedia}{,} The Free Encyclopedia},
+  year         = {2022},
+}
+
+@Book{site:matlab,
+  author    = {{MATLAB}},
+  publisher = {{The MathWorks Inc.}},
+  title     = {{9.10.0.1684407 (R2021a Update 3)}},
+  address   = {{Natick, Massachusetts}},
+  url       = {https://www.mathworks.com/help/signal/ref/xcorr2.html?s_tid=mwa_osa_a},
+}
+
+@Article{journal:scipy,
+  author    = {Pauli Virtanen and Ralf Gommers and Travis E. Oliphant and Matt Haberland and Tyler Reddy and David Cournapeau and Evgeni Burovski and Pearu Peterson and Warren Weckesser and Jonathan Bright and St{\'{e}}fan J. van der Walt and Matthew Brett and Joshua Wilson and K. Jarrod Millman and Nikolay Mayorov and Andrew R. J. Nelson and Eric Jones and Robert Kern and Eric Larson and C J Carey and {\.{I}}lhan Polat and Yu Feng and Eric W. Moore and Jake VanderPlas and Denis Laxalde and Josef Perktold and Robert Cimrman and Ian Henriksen and E. A. Quintero and Charles R. Harris and Anne M. Archibald and Ant{\^{o}}nio H. Ribeiro and Fabian Pedregosa and Paul van Mulbregt and Aditya Vijaykumar and Alessandro Pietro Bardelli and Alex Rothberg and Andreas Hilboll and Andreas Kloeckner and Anthony Scopatz and Antony Lee and Ariel Rokem and C. Nathan Woods and Chad Fulton and Charles Masson and Christian Häggström and Clark Fitzgerald and David A. Nicholson and David R. Hagen and Dmitrii V. Pasechnik and Emanuele Olivetti and Eric Martin and Eric Wieser and Fabrice Silva and Felix Lenders and Florian Wilhelm and G. Young and Gavin A. Price and Gert-Ludwig Ingold and Gregory E. Allen and Gregory R. Lee and Herv{\'{e}} Audren and Irvin Probst and Jörg P. Dietrich and Jacob Silterra and James T Webber and Janko Slavi{\v{c}} and Joel Nothman and Johannes Buchner and Johannes Kulick and Johannes L. Schönberger and Jos{\'{e}} Vin{\'{\i}}cius de Miranda Cardoso and Joscha Reimer and Joseph Harrington and Juan Luis Cano Rodr{\'{\i}}guez and Juan Nunez-Iglesias and Justin Kuczynski and Kevin Tritz and Martin Thoma and Matthew Newville and Matthias Kümmerer and Maximilian Bolingbroke and Michael Tartre and Mikhail Pak and Nathaniel J. Smith and Nikolai Nowaczyk and Nikolay Shebanov and Oleksandr Pavlyk and Per A. Brodtkorb and Perry Lee and Robert T. McGibbon and Roman Feldbauer and Sam Lewis and Sam Tygier and Scott Sievert and Sebastiano Vigna and Stefan Peterson and Surhud More and Tadeusz Pudlik and Takuya Oshima and Thomas J. Pingel and Thomas P. Robitaille and Thomas Spura and Thouis R. Jones and Tim Cera and Tim Leslie and Tiziano Zito and Tom Krauss and Utkarsh Upadhyay and Yaroslav O. Halchenko and Yoshiki V{\'{a}}zquez-Baeza and},
+  journal   = {Nature Methods},
+  title     = {{SciPy} 1.0: fundamental algorithms for scientific computing in Python},
+  year      = {2020},
+  month     = {feb},
+  number    = {3},
+  pages     = {261--272},
+  volume    = {17},
+  doi       = {10.1038/s41592-019-0686-2},
+  publisher = {Springer Science and Business Media {LLC}},
+}
+
+@inproceedings{liu2011gpu,
+  title={Gpu accelerated fourier cross correlation computation and its application in template matching},
+  author={Liu, Yunhui and Zou, Qi and Luo, Siwei},
+  booktitle={High Performance Networking, Computing, and Communication Systems: Second International Conference, ICHCC 2011, Singapore, May 5-6, 2011. Selected Papers},
+  pages={484--491},
+  year={2011},
+  organization={Springer}
+}
+
+@inproceedings{kikuchi2022calculation,
+  title={Calculation of Cross-correlation Function Accelerated by Tensor Cores with TensorFloat-32 Precision on Ampere GPU},
+  author={Kikuchi, Yuma and Fujita, Kohei and Ichimura, Tsuyoshi and Hori, Muneo and Maddegedara, Lalith},
+  booktitle={International Conference on Computational Science},
+  pages={277--290},
+  year={2022},
+  organization={Springer}
+}
+
+@article{zeng2022gpu,
+  title={GPU-accelerated MART and concurrent cross-correlation for tomographic PIV},
+  author={Zeng, Xin and He, Chuangxin and Liu, Yingzheng},
+  journal={Experiments in Fluids},
+  volume={63},
+  number={5},
+  pages={91},
+  year={2022},
+  publisher={Springer}
+}
+
+@inproceedings{fan2017real,
+  title={Real-time implementation of stereo vision based on optimised normalised cross-correlation and propagated search range on a gpu},
+  author={Fan, Rui and Dahnoun, Naim},
+  booktitle={2017 IEEE International Conference on Imaging Systems and Techniques (IST)},
+  pages={1--6},
+  year={2017},
+  organization={IEEE}
+}
+
+@article{ventosa2019towards,
+  title={Towards the processing of large data volumes with phase cross-correlation},
+  author={Ventosa, Sergi and Schimmel, Martin and Stutzmann, Eleonore},
+  journal={Seismological Research Letters},
+  volume={90},
+  number={4},
+  pages={1663--1669},
+  year={2019},
+  publisher={Seismological Society of America}
+}
+
+@inproceedings{zhou2021high,
+  title={A High Performance Computing Method for Noise Cross-Correlation Functions of Seismic Data},
+  author={Zhou, Junwei and Wei, Qian and Wu, Chao and Sun, Guangzhong},
+  booktitle={2021 IEEE Intl Conf on Parallel \& Distributed Processing with Applications, Big Data \& Cloud Computing, Sustainable Computing \& Communications, Social Computing \& Networking (ISPA/BDCloud/SocialCom/SustainCom)},
+  pages={1179--1182},
+  year={2021},
+  organization={IEEE}
+}
+
+@article{beauce2017fast,
+    author = {Beaucé, Eric and Frank, William B. and Romanenko, Alexey},
+    title = "{Fast Matched Filter (FMF): An Efficient Seismic Matched‐Filter Search for Both CPU and GPU Architectures}",
+    journal = {Seismological Research Letters},
+    volume = {89},
+    number = {1},
+    pages = {165-172},
+    year = {2017},
+    month = {12},
+    issn = {0895-0695},
+    doi = {10.1785/0220170181},
+    url = {https://doi.org/10.1785/0220170181},
+    eprint = {https://pubs.geoscienceworld.org/ssa/srl/article-pdf/89/1/165/4018649/srl-2017181.1.pdf},
+}
+
+@ARTICLE{Yamaguchi2019,
+  author={Yamaguchi, Takuma and Ichimura, Tsuyoshi and Fujita, Kohei and Kato, Aitaro and Nakagawa, Shigeki},
+  journal={IEEE Signal Processing Letters}, 
+  title={Matched Filtering Accelerated by Tensor Cores on Volta GPUs With Improved Accuracy Using Half-Precision Variables}, 
+  year={2019},
+  volume={26},
+  number={12},
+  pages={1857-1861},
+  doi={10.1109/LSP.2019.2951305}}
+
+@inproceedings{yan2020optimizing,
+  title={Optimizing batched winograd convolution on GPUs},
+  author={Yan, Da and Wang, Wei and Chu, Xiaowen},
+  booktitle={Proceedings of the 25th ACM SIGPLAN symposium on principles and practice of parallel programming},
+  pages={32--44},
+  year={2020}
+}
+
+@INPROCEEDINGS{Cui2019Real,
+  author={Cui, Han and Dahnoun, Naim},
+  booktitle={2019 8th Mediterranean Conference on Embedded Computing (MECO)}, 
+  title={Real-Time Stereo Vision Implementation on Nvidia Jetson TX2}, 
+  year={2019},
+  volume={},
+  number={},
+  pages={1-5},
+  doi={10.1109/MECO.2019.8760027}}
+
+@article{lu2021optimizing,
+  title={Optimizing depthwise separable convolution operations on gpus},
+  author={Lu, Gangzhao and Zhang, Weizhe and Wang, Zheng},
+  journal={IEEE Transactions on Parallel and Distributed Systems},
+  volume={33},
+  number={1},
+  pages={70--87},
+  year={2021},
+  publisher={IEEE}
+}
+
+@article{tomov2011magma,
+  title={MAGMA users’ guide},
+  author={Tomov, Stanimire and Nath, Rajib and Du, Peng and Dongarra, Jack},
+  journal={ICL, UTK (November 2009)},
+  year={2011}
+}
+
+@article{fan2018real,
+  title={Real-time stereo vision-based lane detection system},
+  author={Fan, Rui and Dahnoun, Naim},
+  journal={Measurement Science and Technology},
+  volume={29},
+  number={7},
+  pages={074005},
+  year={2018},
+  publisher={IOP Publishing}
+}
+
+@article{chang2022efficient,
+  title={Efficient stereo matching on embedded GPUs with zero-means cross correlation},
+  author={Chang, Qiong and Zha, Aolong and Wang, Weimin and Liu, Xin and Onishi, Masaki and Lei, Lei and Er, Meng Joo and Maruyama, Tsutomu},
+  journal={Journal of Systems Architecture},
+  volume={123},
+  pages={102366},
+  year={2022},
+  publisher={Elsevier}
+}
+
+@inproceedings{syed2021accelerated,
+  title={Accelerated Stereo Vision Using Nvidia Jetson and Intel AVX},
+  author={Syed, Imran A and Datar, Mandar and Patkar, Sachin},
+  booktitle={Computer Vision and Image Processing: 5th International Conference, CVIP 2020, Prayagraj, India, December 4-6, 2020, Revised Selected Papers, Part II 5},
+  pages={137--148},
+  year={2021},
+  organization={Springer}
+}
+
+@article{ragoomundun2020cublas,
+  title={A cuBLAS-based GPU correlation engine for a low-frequency radio telescope},
+  author={Ragoomundun, N and Beeharry, GK},
+  journal={Astronomy and Computing},
+  volume={32},
+  pages={100407},
+  year={2020},
+  publisher={Elsevier}
+}
+
+@article{ord2015murchison,
+  title={The Murchison widefield array correlator},
+  author={Ord, Stephen M and Crosse, Brian and Emrich, David and Pallot, Dave and Wayth, Randall B and Clark, Michael A and Tremblay, Steven E and Arcus, Wayne and Barnes, David and Bell, M and others},
+  journal={Publications of the Astronomical Society of Australia},
+  volume={32},
+  pages={e006},
+  year={2015},
+  publisher={Cambridge University Press}
+}
+
+@article{bracewell1966fourier,
+  title={The Fourier transform and its applications},
+  author={Bracewell, Ron and Kahn, Peter B},
+  journal={American Journal of Physics},
+  volume={34},
+  number={8},
+  pages={712--712},
+  year={1966},
+  publisher={American Association of Physics Teachers}
+}

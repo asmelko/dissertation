@@ -1,0 +1,108 @@
+%% Creator: Inkscape 1.3 (0e150ed6c4, 2023-07-21), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'warpshuffle-overview.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{287.6683513bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.64655868)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{warpshuffle-overview.pdf}}%
+    \put(0.87158197,0.58549785){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{warpshuffle-overview.pdf}}%
+    \put(0.87158192,0.40299606){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{warpshuffle-overview.pdf}}%
+    \put(0.24586145,0.58549781){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{warpshuffle-overview.pdf}}%
+    \put(0.42836327,0.58549781){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{warpshuffle-overview.pdf}}%
+    \put(0.66300842,0.50728283){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{warpshuffle-overview.pdf}}%
+    \put(0.66300846,0.32478093){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{warpshuffle-overview.pdf}}%
+    \put(0.24586138,0.40299607){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{warpshuffle-overview.pdf}}%
+    \put(0.42836321,0.40299607){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{warpshuffle-overview.pdf}}%
+    \put(0.24586145,0.45513937){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{warpshuffle-overview.pdf}}%
+    \put(0.42836327,0.45513937){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{warpshuffle-overview.pdf}}%
+    \put(0.87158192,0.18138667){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{warpshuffle-overview.pdf}}%
+    \put(0.87158197,0.05102822){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{warpshuffle-overview.pdf}}%
+    \put(0.66300846,0.10317158){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{warpshuffle-overview.pdf}}%
+    \put(0.24586138,0.18138669){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{warpshuffle-overview.pdf}}%
+    \put(0.42836321,0.18138669){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=16]{warpshuffle-overview.pdf}}%
+    \put(0.24586144,0.05102821){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=17]{warpshuffle-overview.pdf}}%
+    \put(0.42836326,0.05102821){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=18]{warpshuffle-overview.pdf}}%
+    \put(0.75425935,0.50283315){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}multiply + add\end{tabular}}}}%
+    \put(0.76608669,0.54179354){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}broadcast\end{tabular}}}}%
+    \put(0.3227322,0.62521922){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}left buffer (64 items)\end{tabular}}}}%
+    \put(0.8449884,0.62529389){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}right buffer (32 items)\end{tabular}}}}%
+    \put(0.3240765,0.50970151){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}shift left\end{tabular}}}}%
+    \put(-0.00181953,0.57488062){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Step 1:\end{tabular}}}}%
+    \put(-0.00181959,0.39237886){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Step 2:\end{tabular}}}}%
+    \put(-0.00181959,0.17076952){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Step 32:\end{tabular}}}}%
+    \put(0.53199824,0.22749586){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=19]{warpshuffle-overview.pdf}}%
+    \put(0.63747994,0.03703941){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}coalesced\\(re)loads\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=20]{warpshuffle-overview.pdf}}%
+    \put(0.24586145,0.27263756){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=21]{warpshuffle-overview.pdf}}%
+    \put(0.42836328,0.27263756){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=22]{warpshuffle-overview.pdf}}%
+  \end{picture}%
+\endgroup%

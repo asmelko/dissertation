@@ -1,0 +1,37 @@
+\section{Introduction}\label{sec:intro}
+
+Signal processing and analysis are essential in a plethora of applications ranging from video analysis, image matching, audio pattern recognition, or processing sensory inputs in various domains in physics, biology, pharmacy, or medicine~\cite{Kapinchev2015}. Cross-correlation is one of the basic methods employed in signal processing since it provides a metric that compares two signals and allows us to detect the best overlap including the relative shift between two signals.
+
+In this work, we focus solely on the efficiency of the cross-correlation algorithm implementation and we aim to design optimizations that should speed up the computation. We tackle the problem with parallel computing, namely employing contemporary GPU accelerators which are particularly suited for data-parallel tasks. Although the task seems simple at first glance, achieving optimal efficiency is quite challenging due to the unique lock-step execution model of the GPUs which is placed in contrast with the workload imbalance that arises from a straightforward parallel implementation of cross-correlation. Furthermore, the GPUs often suffer from data-throughput issues which are raised by the fact the GPU memory needs to feed tens of thousands of computing cores; hence, we need to design an algorithm that promotes sharing loaded inputs among the cores by cleverly caching data in shared memory or registers. Having a highly optimized, GPU-accelerated implementation of cross-correlation can be beneficial for many applications, especially when the inputs are large or when they need to be processed in real-time. Furthermore, the GPU can achieve a better watt-to-performance ratio than the CPU when used efficiently, so our effort can contribute to power consumption savings in the long run.
+
+Each application of cross-correlation has slightly different parameters, depending on the size of the correlated signals or the number of instances being computed simultaneously. For instance, computing one instance of cross-correlation of two large signals would use a different optimization algorithm than computing a correlation between one small signal and a long sequence of medium-sized signals (i.e., searching for a pattern in a video sequence). Thus, our second aim is to compare and analyze the most typical applications of cross-correlation and find the best algorithm for each type.
+
+There are basically two approaches to computing a cross-correlation. A~na\"{i}ve (or definition-based) implementation that directly follows the mathematical definition (with time complexity of ${\cal O}(N^2)$, where $N$ is the size of both input signals) and an implementation that uses a Fourier Transform (FT) which has better asymptotical complexity (${\cal O}(N \log N)$), but also higher computational overhead. We are focusing solely on the definition-based implementations where the actual code optimizations can be explored and which is more suitable for computing multiple instances of smaller signals. The FT-based algorithm can be implemented using highly optimized libraries like cuFFT, which is currently not interesting from the perspective of basic research in parallel computing and optimizations. However, we have implemented a cuFFT version of cross-correlation as well so we can compare and evaluate both approaches empirically.
+
+
+\subsection{Motivational application}\label{sec:intro-motivation}
+
+Our research was motivated by material analysis --- detecting material defects by electron microscope. The method uses the microscope to scan the surface of a material in a raster pattern. It projects an electron beam towards individual points in the raster and collects a \emph{backscatter diffraction pattern} for each point. In computer science terms, the method collects a grey-scale image for each point in an input grid. For the selected material, there is a reference diffraction pattern that would be expected for a material without any defects. The collected images are compared with the reference image to detect possible distortions (e.g., translations, rotations, or warps) and these distortions can be interpreted as defects.
+
+The comparison of measured and expected diffraction patterns is performed by dividing the images into multiple corresponding areas (i.e., areas with the same sizes and coordinates in both images) and cross-correlation is used to determine a relative shift of these two areas in the images. Thus we need to compute a cross-correlation of $N$ samples from one signal with $N$ samples from $M$ signals. The $N\cdot M$ easily reaches an order of millions, but the size of the areas is relatively small. Therefore, there is a lot of potential for parallelization, but it also means that the FT-based approach is likely to be slower than the definition-based approach.
+
+Although the collection of the inputs from the microscope takes some time, the subsequent data processing can take even longer time when sequential implementation is used. Furthermore, in many cases, the results need to be re-computed multiple times with different input areas or different image-normalization preprocessing. Therefore, a GPU-accelerated implementation would significantly improve the user experience when interpreting the data.
+
+
+\subsection{Contributions and outline}
+
+We have implemented, measured, and analyzed a wide range of optimizations of four of the most typical cross-correlation applications. The main contributions can be summarized into three points:
+
+\begin{itemize}
+	\item We provide a CUDA-based algorithm (including an implementation) that is empirically evaluated as the best for each of the studied applications.
+	\item Extensive evaluation and performance analysis of the individual optimization steps provide additional insight into GPU programming and code optimizations.
+	\item We have determined the size thresholds of the input signals when the FT-based implementation (with better asymptotical complexity) takes over the definition-based implementation (which has lower overhead).
+\end{itemize}
+
+The source codes of the proposed algorithms, related scripts, and all the measured data as well as plotted graphs are available in a replication package in a GitHub repository\footnote{\url{https://github.com/asmelko/jpdc23-artifact}}.
+
+The paper is organized as follows.
+The definition of cross-correlation including the formalization of the studied instances is presented in Section~\ref{sec:cross}.
+Section~\ref{sec:analysis} presents our analysis of parallelization possibilities and data re-use (inputs caching).
+The proposed algorithms and their implementation details are described in Section~\ref{sec:algorithms} and empirically evaluated in Section~\ref{sec:crosscorr_experiments}.
+Related work is overviewed in Section~\ref{sec:crosscorr_relwork} and Section~\ref{sec:crosscorr_conclusions} concludes the paper.

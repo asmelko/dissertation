@@ -1,0 +1,128 @@
+\section{Related Work}\label{sec:crosscorr_relwork}
+
+% Projit nize uvedene a dat je nejak do perspektivy pripadne chronologicke navaznosti
+% Same as with the previously mentioned work, these approaches solve a slightly different problem with regards to data reuse since they share the intermediate results between workers, while we reuse only the global memory loads. But the idea of grouping multiple overlaps into a single job is the same.
+
+% There are plenty of other scientific papers related to GPU cross-correlation~. However, they describe GPU optimizations for a specific scientific use-case and use almost exclusively some modifications of the asymptotically better FFT-based algorithms. Therefore, the optimizations mentioned in these works are not applicable to our problem.
+
+% unsorted
+% --------
+
+% general template matching
+% 2d cross correlation implemented using FFT
+% \cite{liu2011gpu} - Gpu accelerated fourier cross correlation computation and its application in template matching
+
+% Optical coherence tomography
+% 2d
+% used in ophtalmology, where detailed imagery of the retina, the optic nerve, and other parts of the eye is essential for accurate diagnosis 
+% \cite{Kapinchev2015} - GPU implementation of cross-correlation for image generation in real time
+
+% particle image velocimetry - CC is used to compute displacement vectors
+% process has high complexity and is optimized using GPU cuFFT
+% \cite{zeng2022gpu} - PU-accelerated MART and concurrent cross-correlation for tomographic PIV (2022, asi aplikacni)
+
+% Digital image correlateion
+% 2d
+% \cite{zhang2015} - High accuracy digital image correlation powered by GPU-based parallel computing
+
+% seismic:
+% --------------
+
+% ambient noise imaging uses noise CC functions to obtain earth underground structures
+% due to increasing number of seismomenters and the data they produce, getting more accurate earth's seismic information is limited by the runtime of NCF
+% authors optimize it on GPU 
+% \cite{zhou2021high} - A High Performance Computing Method for Noise Cross-Correlation Functions of Seismic Data
+
+% another seismic usecase for GPU cross correlation
+% \cite{beauce2017fast} - Fast Matched Filter (FMF): An Efficient Seismic Matched‐Filter Search for Both CPU and GPU Architectures
+
+% PCC is used for Interstation correlation, which is the basic operation in seismic noise and coda-wave interferometry
+% PCC has high computational complexity, authors rewrite it in terms of complex FFT and provide GPU impl
+% \cite{ventosa2019towards} - Towards the processing of large data volumes with phase cross-correlation (2019, aplikacni)
+
+% stereo vision:
+% ---------------
+
+% authors introduce optimized algorithms and provide real-time GPU implementation of disparity map computation used in autonomous vehicle applications
+% 2d
+% \cite{fan2017real} - Real-time implementation of stereo vision based on optimised normalised cross-correlation and propagated search range on a gpu (2017, aplikacni)
+% \cite{syed2021accelerated} - Accelerated Stereo Vision Using Nvidia Jetson and Intel AVX
+% \cite{chang2022efficient} - Efficient stereo matching on embedded GPUs with zero-means cross correlation
+
+% astronomy:
+% ----------
+
+% signal processing for radio astronomy
+% % 1d
+% \cite{Clark2011} - Accelerating Radio Astronomy Cross-Correlation with Graphics Processing Units
+% \cite{ord2015murchison} - The Murchison widefield array correlator
+% \cite{ragoomundun2020cublas} - A cuBLAS-based GPU correlation engine for a low-frequency radio telescope
+
+% Many works leverage some form of partitioning cross-correlation problem into tasks to be executed in parallel. Khalil et al.~\cite{khalil2013accelerating} distributes the work of 1D cross-correlation between nodes in a local network. The sequence of all delays (overlaps in our terminology) is `sliced' and distributed according to the number of nodes and their computing power. In our work, we employ the same distribution technique but with a difference of much finer granularity, dividing work into single overlaps or even into parts of overlaps between workers.
+
+Cross-correlation relates to the problem of signal processing in many different fields and we have collected several examples where the GPU processing creates an edge. In the domain of radio astronomy, all signals from radio antennas need to be usually correlated with each other, which puts this problem in the HPC domain. Various cross-correlation optimizations have been proposed: Clark et al.~\cite{Clark2011} developed a GPU kernel, which promotes tiling and optimized memory transfer. By utilizing both FPGAs and GPUs, Ord et al.~\cite{ord2015murchison} propose a hybrid approach to achieve sufficient performance. Ragoomundun et al.~\cite{ragoomundun2020cublas} utilize batched matrix multiply routines of the cuBLAS GPU library to implement their optimized correlator to enable real-time processing for telescopes.
+
+Seismic interferometry is another use case, where cross-correlation plays a major role. An increasing amount of seismometers allows the production of more detailed seismic information of the Earth but it is typically limited by the processing runtime. Zhou et al.~\cite{zhou2021high} optimize noise cross-correlation functions used to obtain Earth's underground structures. Ventosa et al.~\cite{ventosa2019towards} implement a GPU version of phase cross-correlation, which is used in Interstation correlation. Beaucé et al.~\cite{beauce2017fast} discuss optimizations of Fast Matched Filter, which is an important tool in the detection of seismic events.
+
+Applications of cross-correlation can be also found in computer vision. Fan et al. discuss autonomous vehicle applications in the context of disparity maps~\cite{fan2017real} (used for stereo vision) or lane detection~\cite{fan2018real}. Typically, mobile platforms such as autonomous cars and robots have strict limits to their power intake, so Syed et al.~\cite{syed2021accelerated} and Chang et al~\cite{chang2022efficient} described ways to further optimize stereo vision algorithms on embedded hardware, such as Nvidia Jetson GPU, to achieve the required speed of processing while maintaining low power consumption.
+
+It has been established that fast cross-correlation is useful in various practical domains. However, most of the papers mentioned in the previous put little effort into the optimizations of the algorithm and provide only straightforward GPU implementations. We would like to introduce also several works which have influenced our proposed solution. Perhaps the most fundamental is the well-known BLAS library called Magma~\cite{tomov2011magma}. It is one of the first libraries that effectively utilized two-level tile caching (shared memory and registers) in matrix multiplication.
+
+Similar caching can be employed when image tiles are being compared many times. An example of an algorithm that relies heavily on comparing image tiles is Block-matching and 3D denoising, which has a very efficient CUDA implementation by Honzátko et al.~\cite{paper:krulis_3d_block}. Similarly to cross-correlation, the BM3D algorithm searches for similarity between image parts, so it compares different overlapping tiles. In the CUDA implementation, the authors made an observation that the overlapping work can be computed only once and re-used. They also employed an efficient work distribution pattern where an entire warp cooperates on a comparison of a single patch. Closer to our research, a CUDA-accelerated implementation of 3D stereo vision~\cite{Cui2019Real} employs cross-correlation computed on neighborhoods of all pixels to determine relative shifts between images taken from stereo cameras. The implementation of the 3D vision was quite efficient thanks to effective caching in shared memory, albeit it was implemented for a rather specific Nvidia Jetson TX2 device.
+
+We found no elaborate optimizations directly for the cross-correlation, but more thorough research was done in the domain of convolution, especially in methods related to training neural networks. Yan et al.~\cite{yan2020optimizing} presented an optimized GPU implementation for batched Winograd convolutions. Similarly to us, they have observed the low arithmetic density of their solution and attempted to mitigate the problem by cleverly caching the data in the registers. The solution presented by Lu et al.~\cite{lu2021optimizing} introduces even more complex optimizations. In particular, they employ warp-wise buffers managed by warp-shuffle instructions and data reuse patterns similar (but simpler) to our grouped-overlap optimization. However, the convolution algorithms optimize for larger input on one side and rather small filter on the other side, so it is not directly applicable for general cross-correlation.
+
+The work that inspired our design probably the most was the CUDA implementation of Levenshtein's edit distance~\cite{paper:levenstein}. It uses circular warp-wise buffers and clever utilization of warp-shuffle instructions that lead to a very efficient algorithm that is quite fast despite the unavoidable data dependencies inherent to the Levenshtein. It also uses double buffering to promote coalesced loads, similar to our left-matrix buffers.
+
+Finally, there is one aspect of modern GPUs that we have not focused on in our work. Contemporary NVIDIA architectures since Volta incorporate \emph{Tensor units} in the GPU streaming multiprocessors. These units are specifically designed to perform fused multiply-add instructions (FMA), which are essential in many computations including cross-correlation. The tricky part is to use them efficiently since they are designed only for particular combinations of FMAs that are used in neural networks. Kikuchi et al.~\cite{kikuchi2022calculation} presented an implementation specifically tailored for the use of CUDA tensor cores. They employ \emph{Warp Matrix Multiply-Accumulate API} to compute multiple waveform pairs with multiple shifts (overlaps) simultaneously. The solution is claimed to achieve better performance than cuBLAS, but it is applicable only for 1D cross-correlation. A similar idea was proposed by Yamaguchi et al.~\cite{Yamaguchi2019} earlier, but they have focused on half-precision (FP16) computations. The FMA optimizations were omitted from our paper for the sake of brevity, but they definitely present another possibility to achieve even better performance.
+
+
+% pre kazdy bod v lavom obrazku sa vytvori window 9x9 a ten sa posuva po y osi v pravom obrazku. pre kazdy posun sa vypocita CC s pravym obrazkom. zo vsetkych posunov pre dany zdrojovy bod sa vyberie najvyssia hodnota CC a ta sa ulozi do vysledneho obrazku
+% impl: thread block je definovany ako w x h thredov. kazdy thread pocita jeden pixel vysledneho obrazkudo
+% do shared mem sa nacita (w+8) x (h+8) dat z laveho obrazku - kazdy thread teda ma vsetky data, ktore potrebuje
+% nasledne sa spravi nieco ako (w+8) x (h+8) hadamard produkt a potom si kazdy thread urobi horizontalnu a vertikalnu sumaciu a ziska CC pre svoj pixel
+% ziaden data reuse vramci roznych posunov (kazdy posun sa pocita osobitne)
+% kedze okno je mensie ako obrazky, niektore overlapy nezdielaju iba data (ako je u nas) ale aj samotne nasobenia (co u nas uz neplati)
+% z pohladu reusovania nasobeni su na tom asi tak dobre ako to je mozne, jedina zdvojena praca je na hranciach thread blokov
+% ale z pohladu reusovania nacitanych dat je to bieda, napr z dovodu pocitania posunov osobitne
+%\cite{Cui2019Real} - Real-Time Stereo Vision Implementation on Nvidia Jetson TX2
+
+% konvolucia
+% je tam nieco ako nas warp-buffer a nieco ako nas grouped-overlap
+% autori cielili na optimalizaciu pre male filtre (3x3, 5x5) a claimuju 2x zrychlenie oproti cudnn
+% 1. optimalizacia: (buffer)
+% autori zvolili thread per "overlap" (per jednu konvoluciu) - zistili, ze ked mas 2 susedne posuny 5x5 filtru, tak kazdy riadok ma overlap v 4 elementoch
+% pre 5x5 to vyriesili tak, ze kazdy thread si nacita 1. a 5. element a pomocou shfl_xor si docita zvysne 3 elementy (2. 3. a 4.) - takze kazdy thread ma reg buffer velkosti 5
+% ale na to aby si v shfl_xor indexoval ten buffer statickymi indexami (a teda dovolil compileru ho ulozit v registroch), tak musis pred kazdym shfl urobit nieco ako 
+% shfl_var = (laneid == sth) ? first_element_in_buffer : last_element_in_buffer; shfl_xor(shfl_var, 2); (oni to nerobili cez ternarny operator)
+% podporu vacsieho fitra ako 5x5 docielili tak, ze fitler nxn rozsekali na filre nx5 bez zmeny zmieneneho postupu
+% to znamena, ze dve stvorice threadov pracujuce na susednych castiach jedneho filtra uz nebenefituju ziaden data reuse
+% zhrnutie s velkou mierou domyslania: 
+% v prvom kroku warp nacita 32 consecutive input elementov zacinajuc na adrese A, v druhom kroku nacitaju 32 elementov na adrese A+5
+% dalej nastavaju 3 warp shuffle, nakoniec si kazdy thread naplni svoj 5miestny buffer spravnymi elementami z input matice
+% a nakoniec sa ide pocitat 5 FMA instrukcii pre kazdy thread
+% nacitavanie filtru nie je zmienene - ale vieme, ze je v shared mem
+% 2. optimalizacia: (grouped-overlap)
+% ak nie sme uplne v prvom riadku vstupnej matice, tak ten 5miestny buffer kontribuuje v niekolkych konvoluciach susednych na y-ovej osi
+% autori tento nacitany buffer nasobia potencialne az so vsetkymi riadkami filtra 
+% zhrnutie: podobne, ako nas grouped-overlap, ale data reuse je len na "lavej" strane, filter sa musi nacitat duplicitne
+% \cite{lu2021optimizing} - Optimizing depthwise separable convolution operations on gpus
+
+
+% modifikovana konvolucia pre inspiraciu - boj s nizkou aritmetickou intenzitou rieseny cachovanim dat v registroch
+% \cite{yan2020optimizing} - Optimizing batched winograd convolution on GPUs
+
+% TOHLE NA ZAVER - kam by se to dalo jeste rozsirit (pouziti FMA)
+% pouzivaju tensor cores + shared memory ako "buffer"
+% CUDA API nedefinuje ako je fragment matice pre tensor operaciu rozlozeny v registroch - existuje len volanie load_matrix_sync, ktore to hodi do opaque typu fragment
+% optimalizacia: uhadnem rozlozenie fragmentu v registroch - vdaka tomu nemusim vykonstruovat fragment ako suvisly blok pamate (potrebny pre load_matrix_sync), ale mozem vyzobat fragment zo shared priamo do registrov
+% je to 1d cross-correlation, takze "pravu maticu" by slo rotovat medzi registrami na rovnakom principe ako nas warp-sized buffer - v praci ale pouzivaju len shared mem 
+% input je zda sa one-to-many (zvycajne 1:16 s 1024 timesteps) - presnejsie - mame 16 "template waves" dlzky 256 a jeden observation dlzky 1024, z ktoreho berieme okno dlzky 256 korelujeme ho s kazdym template wave
+% zhruba pomer global loads ku tensor operaciam je 1:12 a shared loads ku tensor operaciam je 1:4
+% kod: https://github.com/nlnxfkl/TC-enhanced_Cross-correlation_Function/blob/main/compdef_gpu.cu - pozor, pisal to fortranista
+% vysledky ukazuju dosiahnutie 34% teoretickeho maxima TFLOPS - A100 ma 19.5 TFLOPS FP32 (obyc) a 156 TFLOPS TF32 (tensor)
+% my mame pri 1x8 one-to-many 0.1 TFMAPS (tera FMA za s) pre 16x16 a 5.03 TFMAPS pre 256x256, co je nieco ako 25% ak 1FMA=1FLOP (1x32 pre 256x256 sa posuvame na 7.89 TFMAPS, 32x32 pre 256x256 je to 9.7)
+%Kikuchi et al.~\cite{kikuchi2022calculation} use CUDA tensor cores to calculate cross-correlation of time-series data. They use Warp Matrix Multiply-Accumulate API to compute multiple waweform pairs with multiple time shifts simultaniously. In our terminology, this corresponds to computing multiple overlaps of multiple matrix pairs. This approach proves to provide high performance, as authors state to achieve greater FLOPs than using cuBLAS, but it is applicable only to 1D cross-correlation data.
+
+
+%\cite{Yamaguchi2019} % to iste ako Kikuchi, ale s FP16 (kikuchi to citoval)

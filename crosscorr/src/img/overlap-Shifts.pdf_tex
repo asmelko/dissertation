@@ -1,0 +1,161 @@
+%% Creator: Inkscape 1.2 (dc2aedaf03, 2022-05-15), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'overlap-Shifts.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{447bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.90352349)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,-3\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.72063758){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,-3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.63674497){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,-2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=16]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=17]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=18]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=19]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=20]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=21]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.55285235){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,-1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=22]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=23]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=24]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=25]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=26]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=27]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=28]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.46895973){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,0]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=29]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=30]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=31]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=32]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=33]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=34]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=35]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.38506711){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,1]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=36]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=37]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=38]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=39]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=40]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=41]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=42]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.3011745){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,2]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=43]{overlap-Shifts.pdf}}%
+    \put(0.04194631,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-3,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=44]{overlap-Shifts.pdf}}%
+    \put(0.12583893,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-2,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=45]{overlap-Shifts.pdf}}%
+    \put(0.20973154,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[-1,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=46]{overlap-Shifts.pdf}}%
+    \put(0.29362416,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[0,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=47]{overlap-Shifts.pdf}}%
+    \put(0.37751678,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[1,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=48]{overlap-Shifts.pdf}}%
+    \put(0.4614094,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[2,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=49]{overlap-Shifts.pdf}}%
+    \put(0.54530201,0.21728188){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}[3,3]\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=50]{overlap-Shifts.pdf}}%
+    \put(0.06208054,0.08808725){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Left input matrix\end{tabular}}}}%
+    \put(0.06208054,0.02097315){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Right input matrix\end{tabular}}}}%
+    \put(0.48154362,0.08305369){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Overlap\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=51]{overlap-Shifts.pdf}}%
+    \put(0.48154362,0.0159396){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Output matrix\end{tabular}}}}%
+  \end{picture}%
+\endgroup%

@@ -1,0 +1,163 @@
+\section{Proposed Solutions}\label{sec:algorithms}
+
+We have experimented with various approaches to the problem and we present the best solution for each scenario. Most of the proposed solutions are based on a \emph{warp-shuffle algorithm} which was designed to embrace smart data caching in registers and their exchange among neighboring threads using warp-shuffle instructions. The algorithm can be improved by several data reuse and work distribution optimizations described in the previous section. The warp-shuffle algorithm is not very suitable for very small inputs, so we also present a \emph{warp-per-overlap} algorithm that prioritizes better workload distribution over data reuse which is critical when the GPU is not saturated by the warp-shuffle algorithm. The complete source codes are available in our replication package\footnote{\url{https://github.com/asmelko/jpdc23-artifact}}.
+
+% -----------------------------------------------------------------------------
+\subsection{Warp-shuffle algorithm}\label{sec:ws-algo}
+% -----------------------------------------------------------------------------
+
+The key principle of the warp-shuffle algorithm is that the threads within a warp\footnote{A group of $32$ consecutive threads executed in lock-step.} reuse data loaded from global memory into registers and employ warp-shuffle instructions to distribute the actual values. The same idea is behind the grouped-overlap reuse (depicted in Figure~\ref{fig:overlap_grouped_shared_data}), but in this case, the data reuse is col-wise rather than row-wise and it takes place in the registers of the entire warp (not the registers of a single thread) which need to be updated by warp-wise instructions (warp-shuffles).
+
+First, we demonstrate the main principle using an overlap-wise strategy where the jobs are distributed among the treads so that each warp processes consecutive overlaps on the same row in the output matrix. In other words, the threads of a warp will process overlaps $[x,y], [x+1,y], \ldots, [x+31,y]$ (where $x$ is divisible by $32$). Figure~\ref{fig:warp-shuffle-principle} illustrates which data (from the left and the right matrix) are used by two adjacent threads from a warp if the overlapped area is traversed in row-major order.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.5\textwidth}
+	\fontsize{8}{10}\selectfont
+	\input{crosscorr/src/img/overlap-WarpShuffleShuffle.pdf_tex}
+	\caption{Input data shared between neighboring overlaps}
+	\label{fig:warp-shuffle-principle}
+\end{figure}
+
+A quick analysis reveals, that the data from both matrices can be shared among the threads. In the case of the left matrix, the value used by thread $1$ is required by thread $0$ in the subsequent iteration. In general, thread $i$ can load the value for the next iteration from thread $i+1$, so technically, the data are being shifted to the left among the threads. In the case of the right matrix, each thread requires the same value in the same iteration, except for the corner cases where a thread gets out of the bound of its overlapping area.
+
+
+\subsubsection{Warp-wise buffers}
+
+Data from both input matrices are cached in warp-wise buffers. A \emph{warp-wise buffer} is distributed among the registers of the individual threads in a round-robin manner and managed by warp-shuffle instructions. Each thread holds $N/32$ values, and value $i$ is kept in the $(i \bmod 32)$-th thread of the warp.
+
+The left matrix is buffered in a $64$-item wide warp-wise buffer ($2$~registers per thread). Each thread $t$ finds its current value on the index $t$, which is coincidentally also stored in the register of thread $t$. After each step, the buffer is shifted to the left by one item using (two) warp-shuffle instructions. The reason for using the $64$-item wide buffer is to promote coalesced loading from the main memory (the data can be loaded in $32$-item wide transactions instead of one by one). With $64$ items, the buffer can be rotated $32\times$ without accessing main memory and after that, the second half of the buffer can be replenished with a single coalesced load.
+
+The right matrix is buffered in a warp-wise buffer of $32$ items (one register per thread). This buffer does not require rotations, but the value required for each step needs to be loaded from the corresponding thread. This operation is also handled by a warp-shuffle instruction which can broadcast one value from the selected thread (i.e., its register) to all threads in a warp.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.9\textwidth}
+	\fontsize{9}{12}\selectfont
+	\input{crosscorr/src/img/warpshuffle-overview.pdf_tex}
+	\caption{Buffering and data movements in warp-shuffle algorithm}
+	\label{fig:warpshuffle-overview}
+\end{figure}
+
+Figure~\ref{fig:warpshuffle-overview} depicts data movements in $32$ consecutive steps. Note that each step comprises one arithmetic (FMA\footnote{Fused Multiply-Add --- i.e., an instruction computing $x*y+z$ expression.}) operation and three warp-shuffle instructions. At the end of the $32$-step block, both the gray part of the left buffer and the entire right buffer are filled with new data from the global memory in two coalesced transactions (when the entire warp loads a compact block of memory).
+
+
+\subsubsection{Technical details}\label{sub:ws-technical-details}
+
+There are several technical issues worth mentioning, albeit they are not essential for understanding the algorithm. The first one is how to handle corner cases, since the processed matrices are rarely aligned to the warp size and even if they are, the individual overlaps have different sizes. The loading of the inputs is handled in a way that values outside the input matrices are replaced with zeroes in the warp-wise buffers. Zeroes will not affect the cross-correlation results when used as inputs, so the only conditional code is in the loading step.
+
+In the algorithm description, we have made a requirement, that consecutive items of the output matrix (on a row) are processed by a warp. In more detail, the thread block allocation is made so that the x-dimension has always size $32$ (represents threads within a warp), and the number of warps (the y-dimension) in a block is a tunable parameter of the algorithm (allowing us to find the best occupancy of the multiprocessors). Subsequent warps in a block operate on subsequent rows, which slightly improves the hit rate in hardware caches and also becomes beneficial in the follow-up optimizations. Furthermore, aligning the workload to the warp size also ensures that the edge case (when part of the warp is outside the output matrix) does not create any additional problems in the input buffering mechanism.
+
+Finally, we made some special steps to ensure that the most internal loop of the algorithm (which performs exactly $32$ steps) is unrolled, so it can be highly optimized by the compiler (e.g., by resolving constant expressions in indices). The required hacks can be found in our source code.
+
+
+
+% -----------------------------------------------------------------------------
+\subsection{One-to-one optimizations}
+% -----------------------------------------------------------------------------
+
+The warp-shuffle algorithm can be improved by data reuse techniques described in Section~\ref{sec:analysis}. We shall start with optimizations that do not require multiple inputs (i.e., addressing \textit{one-to-one} configuration).
+
+\subsubsection{Split-overlap}\label{sec:split-overlap-alg}
+
+The split-overlap (specifically the split-row) optimization is designed for situations where the number of tasks is not sufficient to saturate the GPU and we need to decompose the workload further to enable another level of parallelism. The warp-shuffle algorithm is designed to be fully compatible with this optimization. The only difference is that multiple warps are allocated for tasks, that would be processed by a single warp in a regular overlap-wise strategy. The Hadamard product of each result is then computed by multiple threads, each of them being assigned the same amount of rows of the overlapping area (except for the last thread which may receive less). The product is both associative and commutative, so we can compute its part concurrently. Given the number of individual fragments is intended to be relatively low, aggregation by \texttt{atomicAdd} operation is quite adequate in this case.
+
+We have experimented further with better and more complex work distribution patterns that could reduce the time when individual threads are idle due to code divergence caused by the irregularity of the workload. However, the overall improvement was barely measurable, possibly due to the fact the improvements were partially outweighed by increased overhead computations (calculating indices). Thus, we have concluded more elaborate solutions are not worth pursuing further, especially given the increase in their coding complexity.
+
+
+\subsubsection{Grouped-overlap}\label{sec:grouped-overlap-alg}
+
+If the inputs are sufficiently large, we can take an opposite path to optimizations that decrease the number of tasks due to grouping but promote data reusability further. The warp-shuffle approach already reduces global memory loads whilst making them more coalesced, but the data still needs to be shuffled among the threads. The profiling of basic overlap-wise implementation of the warp-shuffle algorithm confirms what is also apparent from Figure~\ref{fig:warpshuffle-overview} --- each FMA instruction (that performs the actual computation) requires $3$ warp-shuffle instructions (that just ensure the data are in the right registers). We can improve this ratio by grouping overlaps (each task comprises multiple overlaps) as suggested in Section~\ref{sec:analysis-reuse}. It enables caching multiple rows from both left and right matrices and subsequently using each value loaded in registers in multiple FMA operations.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.8\textwidth}
+	\fontsize{9}{12}\selectfont
+	\input{crosscorr/src/img/warpshuffle-grouped.pdf_tex}
+	\caption{Data reuse in grouped-overlapped optimization (3 grouped overlaps)}
+	\label{fig:warpshuffle-grouped}
+\end{figure}
+
+Figure~\ref{fig:warpshuffle-grouped} depicts a situation, where each task computes three overlaps displaced by one in the vertical direction ($[x,y]$, $[x,y+1]$, and $[x,y+2]$). The number of rows cached from the left matrix was also set to $3$ (although we may choose a different number of rows than the number of grouped overlaps, the best performance is usually achieved when they are the same). The number of the right rows needs to be set as the number of grouped overlaps and the number of left rows minus one ($3+3-1 = 5$). This setup was selected so all rows cached on the left are loaded exactly once (rows on the right are loaded multiple times).
+
+In this particular case, a thread performs $9$ FMA instructions in each step while the registers are managed by $5$ broadcasts and $6$ shifts. In other words, the FMA to warp-shuffle instructions ratio was improved from $1:3$ to $9:11$. By increasing the grouping (and caching) factor, we can achieve better ratios of FMA to shuffle instructions. On the other hand, grouping reduces the number of tasks and increases the required amount of registers per thread, which may lead to low occupation of GPU cores. The best factor was determined empirically as $4$ overlaps per task.
+
+Finally, there is one important implementation detail. Overlaps grouped together usually do not have the same size. As we iterate over the rows in the left matrix, the beginning or the end of the iteration needs to handle some corner cases. To reduce code divergence, we have divided the row-loop into three phases --- the \emph{init} phase, when the common overlapping part is growing, the \emph{main} phase, which was described above, and the \emph{final} phase, when the common overlapping part is diminishing. We have selected to implement the \emph{init} and the \emph{final} phases separately, to eliminate unnecessary conditions from the \emph{main} phase code (which is usually the dominant part of the calculation).
+
+
+% -----------------------------------------------------------------------------
+\subsection{Multiple cross-correlations}
+% -----------------------------------------------------------------------------
+
+Another level of parallelism and data reuse is opened when multiple cross-correlations are computed simultaneously. The warp-shuffle principle remains intact, but each task aggregates the same work from multiple cross-correlations (duplicating the necessary input buffers and the output values). The greatest advantage is that the computations are truly independent and they have identical shapes, so no additional corner cases have to be handled. The only requirement is that the matrices being correlated simultaneously have the same dimensions.
+
+\subsubsection{Multi-matrix-right}
+
+The first type assumes that one left matrix is correlated with multiple right matrices. This holds for \textit{one-to-many} and \textit{n-to-mn} scenarios. Technically, this assumption holds also for \textit{n-to-m} case, but we can do better optimizations with it as we demonstrate later.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.8\textwidth}
+	\fontsize{9}{12}\selectfont
+	\input{crosscorr/src/img/warpshuffle-multi-right.pdf_tex}
+	\caption{Data reuse of multiple right matrices}
+	\label{fig:warpshuffle-multi-right}
+\end{figure}
+
+Similarly to the grouped-overlap optimization, the objective is to improve the ratio between FMA instructions and warp-shuffle instructions. Increasing the number of right matrices by one adds one FMA instruction and one shuffle instruction as well, thus improving the ratio. In general, having $r$ right matrices cached simultaneously, the ratio of the instructions will be $r:r+2$ (i.e., approaching $1:1$ for large $r$ values).
+
+
+\subsubsection{Multi-matrix-both}
+
+In the case of \textit{n-to-m} scenario, we correlate multiple left matrices with multiple right matrices, so we can employ caching and data reuse on both sides. Unlike the case of the \emph{grouped-overlaps} optimization, all registers from the left buffer are multiplied with the broadcasted data from the right buffers which leads to $l\cdot r$ FMA operations per step (assuming $l$ and $r$ represents the amount of left and right cached matrices respectively). The details are depicted in Figure~\ref{fig:warpshuffle-multi-both}.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.8\textwidth}
+	\fontsize{9}{12}\selectfont
+	\input{crosscorr/src/img/warpshuffle-multi-both.pdf_tex}
+	\caption{Data reuse when multiple matrices are used both on the left and the right}
+	\label{fig:warpshuffle-multi-both}
+\end{figure}
+
+With this configuration, we can easily achieve a better ratio of FMA to shuffle instructions than $1:1$. For instance, in the case of $4$ left and $4$ right matrices being correlated in a joined effort, each thread will compute $4\times4=16$ FMA instructions for every $4\times 2 + 4 = 12$ shuffle instructions. On the other hand, each intermediate result requires a separate register where the products are accumulated, which can easily create register pressure if higher values of $l$ and $r$ are selected.
+
+
+\subsubsection{Combining optimizations}
+
+One of the greatest advantages of \emph{multi-matrix} extensions is that they are orthogonal to \emph{split-row} and \emph{grouped-overlap} optimizations --- in other words, we can combine these two techniques to improve performance further. The combination with the \emph{split-row} is completely straightforward and requires no special modifications. The combination with \emph{grouped-overlap} is slightly more difficult to imagine, so we include a visual aid.
+
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.8\textwidth}
+	\fontsize{9}{12}\selectfont
+	\input{crosscorr/src/img/warpshuffle-combined.pdf_tex}
+	\caption{Combining multi-matrix-both with grouped-overlap}
+	\label{fig:warpshuffle-combined}
+\end{figure}
+
+Figure~\ref{fig:warpshuffle-combined} depicts the computation of a single thread when the two optimizations are combined. The input buffers are merely replicated in two dimensions --- i.e., multiple rows from multiple matrices are being cached. The most difficult part is to find the right balance of the parameters to achieve optimal performance.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Warp-per-overlap algorithm}\label{sec:warp-per-overlap}
+% -----------------------------------------------------------------------------
+
+In the final part, we would like to revisit the problem of GPU underutilization when the matrices are very small. There is an alternate approach to the \emph{warp-shuffle} algorithm with \emph{split-row} optimization (described in Section~\ref{sec:split-overlap-alg}), which may provide even better performance since it aims specifically to better core occupation and minimization of code-divergence.
+
+One of the greatest benefits and limitations of the warp-shuffle algorithm is the requirement that all threads in a warp must process adjacent overlaps within one row. Although it enables coalesced load and data shuffles, it also becomes a source of great thread divergence when the matrices are rather small, especially when the overlapping area width is comparable with the warp size, but not exactly matching. For instance, when correlating two $17\times 17$ matrices, the overlapping area is $33\times 33$, Hence, the second warp on each row will compute only one result value. This limitation is not mitigated by the split-row optimization.
+
+An alternate approach is to allocate an entire warp to process each task --- a \emph{warp-per-overlap} algorithm. Using the basic overlap-wise task division, a task work is to iteratively process all compute elements of the Hadamard product of the overlapping area. The iteration can be divided in a vectorization manner and the threads will be assigned the FMA operations using the round-robin principle (Figure~\ref{fig:warp-per-overlap}).
+ 
+\begin{figure}[ht]
+	\centering
+	\def\svgwidth{0.5\textwidth}
+	\fontsize{7}{9}\selectfont
+	\input{crosscorr/src/img/warp_per_shift-Basic.pdf_tex}
+	\caption{The warp-per-overlap principle demonstrated on warps of size $4$}
+	\label{fig:warp-per-overlap}
+\end{figure}
+
+This way, the workload is more evenly distributed among the threads of a warp which minimizes code divergence and maximizes the effective core occupancy. On the other hand, this task allocation does not provide any means for data reuse and the non-regular data access pattern will require much more global memory transactions.
+
+We have experimented with several memory optimizations that will make the data loads more coalesced as well as manual caching of the input data in the shared memory. Although these improvements may be theoretically intriguing, they are not practical. The reason is that additional modifications of this algorithm increase the coding complexity quite a bit whilst improving the performance only when the input matrices are quite large. However, for larger input matrices the previously presented warp-shuffle algorithm exhibits better performance. Therefore, we propose the warp-per-overlap algorithm as an alternative to the split-row algorithm only for very small input matrices.

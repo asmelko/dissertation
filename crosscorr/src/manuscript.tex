@@ -1,0 +1,71 @@
+% \documentclass[preprint,12pt]{elsarticle}
+% \usepackage{amssymb}
+% \usepackage{amsfonts}
+% \usepackage[utf8]{inputenc}
+% \usepackage{graphicx}
+% \usepackage{subcaption}
+% \usepackage{xcolor}
+% \usepackage{color}
+% \usepackage{url}
+% \usepackage{booktabs}
+
+\definecolor{bluekeywords}{rgb}{0,0,1}
+\definecolor{classgreen}{rgb}{0.17,0.57,0.68}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.64,0.08,0.08}
+\definecolor{black}{rgb}{0,0,0}
+\definecolor{blueattributes}{rgb}{0.37,0.52,0.62}
+\definecolor{interfaceyellow}{rgb}{0.60,0.66,0.11}
+\definecolor{directivepink}{rgb}{0.9,0.6,0.95}
+
+\graphicspath{ {./crosscorr/src/img/} }
+
+
+\chapter{Efficient GPU-accelerated Parallel Cross-correlation}
+
+% \author{Karel Maděra}
+% \ead{karelmad@email.cz}
+
+% \author{Adam Šmelko}
+% \ead{smelko@d3s.mff.cuni.cz}
+
+% \author{Martin Kruliš}
+% \ead{krulis@d3s.mff.cuni.cz}
+
+% \affiliation{organization={Department of Distributed and Dependable Systems, Charles University},
+%             city={Prague},
+%             country={Czech Republic}}
+
+% \begin{abstract}
+% Cross-correlation is a data analysis method widely employed in various signal processing and similarity-search applications. Our objective is to design a~highly optimized GPU-accelerated implementation that would speed up the applications and also improve energy efficiency since GPUs could be more efficient than regular CPUs. There are two rudimentary ways to compute cross-correlation --- a definition-based algorithm that tries all possible overlaps and an algorithm based on the Fourier transform, which is much more complex but has better asymptotical time complexity. We have focused mainly on the definition-based approach which is better suited for smaller input data and we have implemented multiple CUDA-enabled algorithms with multiple optimization options. The algorithms were evaluated on various scenarios, including the most typical types of multi-signal correlations, and we provide empirically verified optimal solutions for each of the studied scenarios.
+% \end{abstract}
+
+
+% \begin{keyword}
+%     cross-correlation \sep GPU \sep CUDA \sep parallel \sep algorithm \sep caching \sep optimizations
+% \end{keyword}
+
+% \end{frontmatter}
+
+%% \linenumbers
+
+%% main text
+
+\input{crosscorr/src/intro.tex}
+\input{crosscorr/src/cross-def.tex}
+\input{crosscorr/src/analysis.tex}
+\input{crosscorr/src/algorithms.tex}
+\input{crosscorr/src/experiments.tex}
+\input{crosscorr/src/relwork.tex}
+
+\section{Conclusions}\label{sec:crosscorr_conclusions}
+
+We have proposed a novel approach to definition-based implementation of cross-correlation for contemporary GPUs. The proposed algorithm takes advantage of the data reuse principle --- i.e., the operations are rearranged so that every value loaded into a register is used multiple times. This way, the load operations from global memory are reduced significantly, which leads to overall performance improvement. To extend this idea further, we designed a data-exchange schema where the values in registers are shuffled among neighboring threads using warp-shuffle instructions, which are much faster than loads from global memory and measurably faster than shared memory. We have also experimented with different scenarios when multiple (shared) input matrices are cross-correlated simultaneously, which enables another level of parallelism and data reuse. The optimizations presented in this paper can lead to a speedup that exceeds an order of magnitude with respect to na\"{i}ve (baseline) CUDA implementation.
+
+We have also compared our algorithms with a traditional FFT approach. As expected, in the case of small matrices, the definition-based approach significantly outperforms the cuFFT implementation due to the costly initialization and preprocessing phase of the FFT transform. In the case of \emph{one-to-one} correlation, the \emph{warp-shuffle} algorithm is better even for $256\times 256$ matrices. When multiple matrices are correlated (the \emph{n-to-m} scenario), the turning point is roughly at the size of $64\times 64$. The proposed algorithms are also available (along with many other implementations we experimented with) as source codes provided in the attached replication package, so our conclusions may be independently verified and the code may be easily adapted for immediate application.
+
+
+% \section*{Acknowledgements}
+
+% This paper was supported by Charles University institutional funding SVV 260698/2023.
+
