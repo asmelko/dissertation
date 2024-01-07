@@ -1,0 +1,27 @@
+\section{Conclusion}\label{sec:outro}
+
+We have presented a GPU implementation for the semi-supervised dimensionality reduction algorithm EmbedSOM where we optimized independently two kernels: A general $k$NN search and a 2D projection which may be used independently. The $k$-NN was solved by adapted bitonic sorting, which eliminates thread divergence. The projection kernel was optimized to fetch and use data most efficiently by utilizing vector loads and data reuse on the register level. A thorough benchmarking indicates that both kernels achieved a significant speedup over the baseline GPU implementation.
+
+The proposed implementation should enable subsequent research in interactive dimensionality reduction tools where the user changes SOM parameters or landmarks and the projections are re-computed and visualized in real-time. The results show that the optimized EmbedSOM version can project more than $1$ million individual data points each frame, while maintaining a frame rate above 30fps. 
+
+
+
+% We have presented BlosSOM, a novel software for semi-supervised dimensionality reduction and visualization of large datasets.
+% BlosSOM utilizes a GPU-accelerated implementation of the EmbedSOM algorithm as a highly efficient base for projecting the data to 2D, and improves its use with several supervision methods that allow the users to interactively and intuitively steer the process towards the desired solution with feedback.
+
+% The GPU implementation in CUDA was thoroughly benchmarked and optimized.
+% In BlosSOM, it is used to dynamically project the data points in an interactive visualization environment, where it re-projects and re-renders all data points every frame at high frame rate.
+% On typical datasets, the optimized version is able to project more than 1 million of individual data points each frame, while maintaining a frame rate of 30fps or higher.
+
+% We described and implemented several methods for user interaction with the landmark-based data model in EmbedSOM, based on self-organizing maps and graph embedding.
+% The combination of the approaches in BlosSOM provided a solution to several challenges typically encountered with unsupervised dimensionality reduction.
+% Finally, we demonstrated the use of BlosSOM on a biologically relevant use-case from single-cell cytometry, where it gives an effective way to produce desirable visualizations with variable level of details.
+
+% We believe that the presented methodology will find use in explorative analysis of complex datasets, and provide a base for constructing intuitive, user-friendly annotation and dissection tools for single-cell cytometry data.
+
+% \subsection{Data and software availability}\label{ssec:data}
+
+% BlosSOM is available as free and open-source software from \texttt{https://github.com/\-molnsona/\-blossom}.
+% Benchmark results are available from \texttt{https://github.com/\-asmelko/\-embed\-som-bench\-marks}.
+
+% Datasets displayed in Sections \ref{sec:methods} and \ref{sec:results} are available from FlowRepository (\texttt{http://flow\-repository.org/\-id/FR-FCM-ZZPH}, file \texttt{Samusik\_all.fcs}) and from Smithsonian institute 3D digitization repository (\texttt{https://3d.si.edu/}, datasets `Mammuthus primigenius (Blumbach)' and `Tyrannosaurus rex', the 3D point coordinates were extracted manually from the vertex coordinates available in \texttt{.obj} files).

@@ -1,0 +1,85 @@
+\documentclass{standalone}
+\usepackage{tgheros}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usetikzlibrary{fit,positioning,arrows.meta}
+\newdimen\linedist
+\linedist=2ex
+\newdimen\tabdist
+\tabdist=2em
+\newdimen\mergedist
+\mergedist=2pt
+\begin{document}%
+\fontsize{7pt}{9pt}\selectfont\sffamily%
+\tikzstyle{t}=[rectangle,rounded corners=0.5ex, draw=blue!80!black!50, inner sep=2pt]
+\tikzstyle{bit}=[rotate=90, text width=3\linedist, align=center]
+\tikzstyle{mrg}=[{>[length=4pt,width=3pt]}-{>[length=4pt,width=3pt]},draw=red!66]
+\tikzstyle{d}=[draw=black,-{>[length=4pt,width=3pt]}]
+\tikzstyle{dx}=[d,-{Rays[length=6pt]}]
+\tikzstyle{cutline}=[draw=black!20]
+\begin{tikzpicture}[thick,node distance=4ex]
+\foreach \i in {0,...,7} {
+  \coordinate (v\i) at (0,\i\linedist);
+};
+\coordinate (h0a) at (0,0);
+\coordinate[right=2ex of h0a] (h0b);
+\coordinate[right=\tabdist of h0b] (h1a);
+\coordinate[right=4ex of h1a] (h1b);
+\coordinate[right=\tabdist of h1b] (h2);
+\coordinate[right=\tabdist of h2] (h3a);
+\coordinate[right=4ex of h3a] (h3b);
+\coordinate[right=\tabdist of h3b] (h4a);
+\coordinate[right=4ex of h4a] (h4b);
+\coordinate[right=\tabdist of h4b] (h5);
+\coordinate[right=\tabdist of h5] (h6);
+\coordinate[right=\tabdist of h6] (h7a);
+\coordinate[right=4ex of h7a] (h7b);
+\coordinate[right=\tabdist of h7b] (h8);
+
+\node[fit=(v0-|h0a)(v7-|h0b),t] (start) {};
+\node[rotate=90] at (start.center) {Initial $2k$ distances};
+\node[fit=(v0-|h1a)(v3-|h1b),t] (bi1a) {};
+\node[fit=(v4-|h1a)(v7-|h1b),t] (bi1b) {};
+\node[bit] at (bi1a.center) {Bitonic sort};
+\node[bit] at (bi1b.center) {Bitonic sort};
+\node[fit=(v0-|h3a)(v3-|h3b),t] (nd) {};
+\node[bit,font=\fontsize{5pt}{7pt}\selectfont] at (nd.center) {next $k$ distances};
+\node[fit=(v0-|h4a)(v3-|h4b),t] (bi2a) {};
+\node[fit=(v4-|h4a)(v7-|h4b),t] (bi2b) {};
+\node[bit] at (bi2a.center) {Bitonic sort};
+\node[bit] at (bi2b.center) {Bitonic sort};
+\node[fit=(v4-|h7a)(v7-|h7b),t] (bi3b) {};
+\node[bit] (res) at (bi3b.center -| h8) {$k$-NN result};
+\node[bit] at (bi3b.center) {Bitonic sort};
+
+\foreach \i in {0,...,7} { \draw[d] (v\i -| start.east) to (v\i -| bi1a.west); };
+\foreach \i in {0,...,3} { \draw[dx] (v\i -| bi1a.east) to ([xshift=-1ex] v\i -| nd.west); };
+\foreach \i in {0,...,7} { \draw[d] (v\i -| nd.east) to (v\i -| bi2a.west); };
+\foreach \i in {4,...,7} { \draw[d] (v\i -| bi1a.east) to (v\i -| bi2a.west); };
+\foreach \i in {0,...,3} { \draw[dx] (v\i -| bi2a.east) to (v\i -| bi3b.west); };
+\foreach \i in {4,...,7} { \draw[d] (v\i -| bi2a.east) to (v\i -| bi3b.west); };
+\foreach \i in {4,...,7} { \draw[d] (v\i -| bi3b.east) to (v\i -| res.north); };
+
+\draw[mrg] ([xshift=-1\mergedist] v0 -| h2) to ([xshift=-1\mergedist] v7 -| h2);
+\draw[mrg] ([xshift=0\mergedist] v1 -| h2) to ([xshift=0\mergedist] v6 -| h2);
+\draw[mrg] ([xshift=1\mergedist] v2 -| h2) to ([xshift=1\mergedist] v5 -| h2);
+\draw[mrg] ([xshift=2\mergedist] v3 -| h2) to ([xshift=2\mergedist] v4 -| h2);
+\draw[mrg] ([xshift=-1\mergedist] v0 -| h5) to ([xshift=-1\mergedist] v7 -| h5);
+\draw[mrg] ([xshift=0\mergedist] v1 -| h5) to ([xshift=0\mergedist] v6 -| h5);
+\draw[mrg] ([xshift=1\mergedist] v2 -| h5) to ([xshift=1\mergedist] v5 -| h5);
+\draw[mrg] ([xshift=2\mergedist] v3 -| h5) to ([xshift=2\mergedist] v4 -| h5);
+
+\coordinate (cuta) at ([yshift=-1ex] v0 -| h6);
+\coordinate (cutb) at ([yshift=1ex] v7 -| h6);
+\fill[fill=white]
+  ([xshift=-1ex] cuta) to[out=100,in=-80] ([xshift=-1ex] cutb)
+  to
+  ([xshift=1ex] cutb) to[out=-80,in=100] ([xshift=1ex] cuta);
+\draw[cutline]
+  ([xshift=-1ex] cuta) to[out=100,in=-80] ([xshift=-1ex] cutb);
+\draw[cutline]
+  ([xshift=1ex] cutb) to[out=-80,in=100] ([xshift=1ex] cuta);
+\end{tikzpicture}
+\end{document}

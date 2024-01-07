@@ -1,0 +1,37 @@
+\section{Introduction\label{sec:intro}}
+
+Dimensionality reduction algorithms emerged as indispensable utilities that enable various forms of intuitive data visualization, providing insight that in turn simplifies rigorous data analysis.
+The development has benefited especially the life sciences, where algorithms like t-SNE~\cite{maaten2008visualizing} reshaped the accepted ways of interpreting many kinds of measurements, such as genes, single-cell phenotypes and development pathways, and behavioral patterns~\cite{toghi2019quantitative,cande2018optogenetic}.
+
+The performance of the non-linear dimensionality reduction algorithms becomes a concern if the analysis pipeline is required to scale or when the results are required in a limited amount of time such as in clinical settings.
+To tackle the limitations of poor scalability, Kratochvíl et al. developed EmbedSOM~\cite{kratochvil2019generalized}, a dimensionality reduction and visualization algorithm based on self-organizing maps (SOMs)~\cite{kohonen1990self}.
+EmbedSOM provided a $10\times$ speedup on datasets typical for single-cell cytometry data visualization while retaining the competitive quality of the results.
+Still, the parallelization potential of EmbedSOM remained mostly untapped as of yet.
+
+This paper describes an efficient, highly parallel GPU implementation of EmbedSOM designed to provide real-time results on large datasets. The implementation is accompanied by performance benchmarks of individual optimizations to evaluate the optimal variants for different dataset sizes. Both the implementation and the empirical data are available in our GitHub repository\footnote{\url{https://github.com/asmelko/gpgpu24-artifact}}.
+
+In the paper, we first describe the EmbedSOM algorithm in Section~\ref{sec:methods}. We specifically detail the CUDA-based GPU implementation of the algorithm in Section~\ref{sec:impl} and evaluate its performance in Section~\ref{sec:results}. Related work is discussed in Section~\ref{sec:embedsom_relwork} and Section~\ref{sec:outro} concludes the paper.
+
+% Dimensionality reduction algorithms emerged as indispensable utilities that enable various forms of intuitive data visualization, providing insight that in turn simplifies rigorous data analysis.
+% Various algorithms have been proposed for graphs and high-dimensional point-cloud data, and many different types of datasets that can be represented with a graph structure or embedded into vector spaces.
+% The development has benefited especially the life sciences, where algorithms like t-SNE~\cite{maaten2008visualizing} reshaped the accepted ways of interpreting many kinds of measurements, such as genes, single-cell phenotypes and development pathways, and behavioral patterns~\cite{toghi2019quantitative,cande2018optogenetic}.
+
+% The performance of the non-linear dimensionality reduction algorithms becomes a concern if the analysis pipeline is required to scale or when the results are required in a limited amount of time such as in clinical settings.
+% The most popular methods, typically based on neighborhood embedding computed by stochastic descent, force-based layouting or neural autoencoders, reach applicability limits when the dataset size is too large.
+% To tackle the limitations, we have previously developed EmbedSOM~\cite{kratochvil2019generalized}, a dimensionality reduction and visualization algorithm based on self-organizing maps (SOMs)~\cite{kohonen1990self}.
+% EmbedSOM provided an order-of-magnitude speedup on datasets typical for single-cell cytometry data visualization while retaining the competitive quality of the results.
+% The concept has proven useful for interactive and high-performance workflows in cytometry~\cite{kratochvil2020shinysom,kratochvil2020gigasom}, and easily applies to many other types of datasets.
+% Despite that, the parallelization potential of the extremely data-regular design of EmbedSOM algorithm has remained mostly untapped.
+
+% Our contribution in this paper is a natural continuation of the development:
+% We describe an efficient, highly parallel GPU implementation of EmbedSOM designed to provide interactive results on large datasets.
+% The implementation is sufficiently fast to provide real-time visualizations of datasets larger than $10^5$ of individual data points on off-the-shelf hardware, while maintaining smooth video-like frame rate.
+% We demonstrate that the result gives unprecedented, controllable view of the details of specific high-dimensional datasets.
+% The instant feedback available to the user opens possibilities for partial supervision of the visualization process, allowing user-intuitive resolution of possible visualization ambiguities as well as natural exploration of new datasets.
+% We demonstrate some of the achievable results on two realistic datasets.
+% The resulting software, called \emph{BlosSOM}, is published as free and open source.
+% BlosSOM can be readily utilized to reproduce our results and explore more datasets; additionally it contains support for working with data formats (mainly, the FCS standard~\cite{fcs}) that make it immediately useful for visualization of existing and new biological data.
+
+% In the paper, we briefly describe the EmbedSOM algorithm (Section~\ref{ssec:embedsom}), and show an extension of its generalized form that dynamically mixes the user feedback to the learning process, thus enabling the semi-supervised learning (Section~\ref{ssec:dynamic}).
+% We specifically detail the CUDA-based GPU implementation of the algorithm in Section~\ref{sec:impl}, and report the achieved performance improvements (Section~\ref{ssec:perf}).
+% Finally, we showcase the achievable results on biological data, and discuss possible future enhancements and applications that would aid data analysis (Sections~\ref{ssec:appl}, \ref{ssec:future}).
