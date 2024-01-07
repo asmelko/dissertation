@@ -51,6 +51,33 @@
 \usepackage{paralist}       % improved enumerate and itemize
 \usepackage{xcolor}         % typesetting in color
 
+% noarr
+\usepackage{subcaption}
+\usepackage{minted}
+\usemintedstyle{vs}
+\definecolor{LightGray}{gray}{0.96}
+\newmintedfile[inputmintedcpp]{c++}{bgcolor=LightGray,tabsize=2,fontsize=\scriptsize,linenos, breaklines,escapeinside=\#\#}
+\usepackage{listings}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstset{basicstyle=\scriptsize\ttfamily,%
+    language=c++,%
+    keywordstyle=\color{blue},%
+    stringstyle=\color{magenta},%
+    commentstyle=\color{green!50!black},%
+    showstringspaces=false,%
+    rulecolor=\color{lightgray},%
+    backgroundcolor=\color{backcolour},   
+    numberstyle=\tiny\color{codegray},
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    tabsize=2,
+    otherkeywords={size_t},
+}
+
 
 %%% Basic information on the thesis
 
@@ -117,7 +144,7 @@ Abstract.
 %%% Each chapter is kept in a separate file
 \include{preface}
 \include{Mahalanobis/paper}
-\include{chap02}
+\include{noarr/main}
 
 \include{epilog}
 

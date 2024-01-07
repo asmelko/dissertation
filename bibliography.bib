@@ -211,3 +211,273 @@
   year={2019},
   publisher={Elsevier}
 }
+
+@misc{guide2013cuda,
+  title={{CUDA} {C} Best Practices Guide},
+  author={{NVIDIA}},
+  year={2013}
+}
+
+@InProceedings{tida,
+author="Unat, Didem
+and Nguyen, Tan
+and Zhang, Weiqun
+and Farooqi, Muhammed Nufail
+and Bastem, Burak
+and Michelogiannakis, George
+and Almgren, Ann
+and Shalf, John",
+editor="Kunkel, Julian M.
+and Balaji, Pavan
+and Dongarra, Jack",
+title="TiDA: High-Level Programming Abstractions for Data Locality Management",
+booktitle="High Performance Computing",
+year="2016",
+publisher="Springer International Publishing",
+address="Cham",
+pages="116--135",
+abstract="The high energy costs for data movement compared to computation gives paramount importance to data locality management in programs. Managing data locality manually is not a trivial task and also complicates programming. Tiling is a well-known approach that provides both data locality and parallelism in an application. However, there is no standard programming construct to express tiling at the application level. We have developed a multicore programming model, TiDA, based on tiling and implemented the model as C++ and Fortran libraries. The proposed programming model has three high level abstractions, tiles, regions and tile iterator. These abstractions in the library hide the details of data decomposition, cache locality optimizations, and memory affinity management in the application. In this paper we unveil the internals of the library and demonstrate the performance and programability advantages of the model on five applications on multiple NUMA nodes. The library achieves up to 2.10x speedup over OpenMP in a single compute node for simple kernels, and up to 22x improvement over a single thread for a more complex combustion proxy application (SMC) on 24 cores. The MPI+TiDA implementation of geometric multigrid demonstrates a 30.9 {\%} performance improvement over MPI+OpenMP when scaling to 3072 cores (excluding MPI communication overheads, 8.5 {\%} otherwise).",
+isbn="978-3-319-41321-1"
+}
+
+@article{CARTEREDWARDS20143202,
+title = {Kokkos: Enabling manycore performance portability through polymorphic memory access patterns},
+journal = {Journal of Parallel and Distributed Computing},
+volume = {74},
+number = {12},
+pages = {3202-3216},
+year = {2014},
+note = {Domain-Specific Languages and High-Level Frameworks for High-Performance Computing},
+issn = {0743-7315},
+doi = {https://doi.org/10.1016/j.jpdc.2014.07.003},
+url = {https://www.sciencedirect.com/science/article/pii/S0743731514001257},
+author = {H. {Carter Edwards} and Christian R. Trott and Daniel Sunderland},
+keywords = {Parallel computing, Thread parallelism, Manycore, GPU, Performance portability, Multidimensional array, Mini-application},
+abstract = {The manycore revolution can be characterized by increasing thread counts, decreasing memory per thread, and diversity of continually evolving manycore architectures. High performance computing (HPC) applications and libraries must exploit increasingly finer levels of parallelism within their codes to sustain scalability on these devices. A major obstacle to performance portability is the diverse and conflicting set of constraints on memory access patterns across devices. Contemporary portable programming models address manycore parallelism (e.g., OpenMP, OpenACC, OpenCL) but fail to address memory access patterns. The Kokkos C++ library enables applications and domain libraries to achieve performance portability on diverse manycore architectures by unifying abstractions for both fine-grain data parallelism and memory access patterns. In this paper we describe Kokkos’ abstractions, summarize its application programmer interface (API), present performance results for unit-test kernels and mini-applications, and outline an incremental strategy for migrating legacy C++ codes to Kokkos. The Kokkos library is under active research and development to incorporate capabilities from new generations of manycore architectures, and to address a growing list of applications and domain libraries.}
+}
+
+@ARTICLE{9485033,
+  author={Trott, Christian R. and Lebrun-Grandié, Damien and Arndt, Daniel and Ciesko, Jan and Dang, Vinh and Ellingwood, Nathan and Gayatri, Rahulkumar and Harvey, Evan and Hollman, Daisy S. and Ibanez, Dan and Liber, Nevin and Madsen, Jonathan and Miles, Jeff and Poliakoff, David and Powell, Amy and Rajamanickam, Sivasankaran and Simberg, Mikael and Sunderland, Dan and Turcksin, Bruno and Wilke, Jeremiah},
+  journal={IEEE Transactions on Parallel and Distributed Systems},
+  title={Kokkos 3: Programming Model Extensions for the Exascale Era},
+  year={2022},
+  volume={33},
+  number={4},
+  pages={805-817},
+  doi={10.1109/TPDS.2021.3097283}}
+
+@article{AFANASYEV2021100707,
+title = {GridTools: A framework for portable weather and climate applications},
+journal = {SoftwareX},
+volume = {15},
+pages = {100707},
+year = {2021},
+issn = {2352-7110},
+doi = {https://doi.org/10.1016/j.softx.2021.100707},
+url = {https://www.sciencedirect.com/science/article/pii/S2352711021000522},
+author = {Anton Afanasyev and Mauro Bianco and Lukas Mosimann and Carlos Osuna and Felix Thaler and Hannes Vogt and Oliver Fuhrer and Joost VandeVondele and Thomas C. Schulthess},
+keywords = {C++, Weather, Climate, Library, Embedded DSL},
+abstract = {Weather forecasts and climate projections are of tremendous importance for economical and societal reasons. Software implementing weather and climate models is complex to develop and hard to maintain, and requires a large range of different competencies, ranging from environmental sciences, numerical methods, to low level programming. In order to manage this complexity we developed GridTools, a set of software libraries targeted at weather and climate model developers. By separating the model description (front-end) from its efficient implementation on the target platform (back-end), GridTools allows the implementation of performance-portable simulations on a variety of platforms, such as multicore and GPU-accelerated systems. We discuss the application of GridTools to the regional weather and climate model COSMO and show performance results on simple benchmarks as well as on COSMO.}
+}
+
+@article{10.1145/2747875,
+author = {Sharma, Namita and Panda, Preeti Ranjan and Catthoor, Francky and Raghavan, Praveen and Aa, Tom Vander},
+title = {Array Interleaving—An Energy-Efficient Data Layout Transformation},
+year = {2015},
+issue_date = {June 2015},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {20},
+number = {3},
+issn = {1084-4309},
+url = {https://doi.org/10.1145/2747875},
+doi = {10.1145/2747875},
+abstract = {Optimizations related to memory accesses and data storage make a significant difference to the performance and energy of a wide range of data-intensive applications. These techniques need to evolve with modern architectures supporting wide memory accesses. We investigate array interleaving, a data layout transformation technique that achieves energy efficiency by combining the storage of data elements from multiple arrays in contiguous locations, in an attempt to exploit spatial locality. The transformation reduces the number of memory accesses by loading the right set of data into vector registers, thereby minimizing redundant memory fetches. We perform a global analysis of array accesses, and account for possibly different array behavior in different loop nests that might ultimately lead to changes in data layout decisions for the same array across program regions. Our technique relies on detailed estimates of the savings due to interleaving, and also the cost of performing the actual data layout modifications. We also account for the vector register widths and the possibility of choosing the appropriate granularity for interleaving. Experiments on several benchmarks show a 6--34% reduction in memory energy due to the strategy.},
+journal = {ACM Trans. Des. Autom. Electron. Syst.},
+month = {jun},
+articleno = {44},
+numpages = {26},
+keywords = {Data layout, SIMD architecture, memory energy optimization}
+}
+
+@inproceedings{sung2010data,
+  title={Data layout transformation exploiting memory-level parallelism in structured grid many-core applications},
+  author={Sung, I-Jui and Stratton, John A and Hwu, Wen-Mei W},
+  booktitle={2010 19th International Conference on Parallel Architectures and Compilation Techniques (PACT)},
+  pages={513--522},
+  year={2010},
+  organization={IEEE}
+}
+
+@article{unat2017trends,
+  title={Trends in data locality abstractions for HPC systems},
+  author={Unat, Didem and Dubey, Anshu and Hoefler, Torsten and Shalf, John and Abraham, Mark and Bianco, Mauro and Chamberlain, Bradford L and Cledat, Romain and Edwards, H Carter and Finkel, Hal and others},
+  journal={IEEE Transactions on Parallel and Distributed Systems},
+  volume={28},
+  number={10},
+  pages={3007--3020},
+  year={2017},
+  publisher={IEEE}
+}
+
+@article{foster2007combinators,
+  title={Combinators for bidirectional tree transformations: A linguistic approach to the view-update problem},
+  author={Foster, J Nathan and Greenwald, Michael B and Moore, Jonathan T and Pierce, Benjamin C and Schmitt, Alan},
+  journal={ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  volume={29},
+  number={3},
+  pages={17--es},
+  year={2007},
+  publisher={ACM New York, NY, USA}
+}
+
+@article{clarke2020profunctor,
+  title={Profunctor optics, a categorical update},
+  author={Clarke, Bryce and Elkins, Derek and Gibbons, Jeremy and Loregian, Fosco and Milewski, Bartosz and Pillmore, Emily and Rom{\'a}n, Mario},
+  journal={arXiv preprint arXiv:2001.07488},
+  year={2020}
+}
+
+@article{weber2017matog,
+  title={MATOG: array layout auto-tuning for CUDA},
+  author={Weber, Nicolas and Goesele, Michael},
+  journal={ACM Transactions on Architecture and Code Optimization (TACO)},
+  volume={14},
+  number={3},
+  pages={1--26},
+  year={2017},
+  publisher={ACM New York, NY, USA}
+}
+
+@article{hawick2011hypercubic,
+  title={Hypercubic storage layout and transforms in arbitrary dimensions using GPUs and CUDA},
+  author={Hawick, Kenneth A and Playne, Daniel P},
+  journal={Concurrency and Computation: Practice and Experience},
+  volume={23},
+  number={10},
+  pages={1027--1050},
+  year={2011},
+  publisher={Wiley Online Library}
+}
+
+@article{clauss2000automatic,
+  title={Automatic memory layout transformations to optimize spatial locality in parameterized loop nests},
+  author={Clauss, Philippe and Meister, Beno{\^\i}t},
+  journal={ACM SIGARCH computer architecture news},
+  volume={28},
+  number={1},
+  pages={11--19},
+  year={2000},
+  publisher={ACM New York, NY, USA}
+}
+
+@inproceedings{panda2001cache,
+  title={Cache-efficient memory layout of aggregate data structures},
+  author={Panda, Preeti Ranjan and Semeria, Luc and De Micheli, Giovanni},
+  booktitle={Proceedings of the 14th international symposium on Systems synthesis},
+  pages={101--106},
+  year={2001}
+}
+
+@inproceedings{bethel2015improving,
+  title={Improving performance of structured-memory, data-intensive applications on multi-core platforms via a space-filling curve memory layout},
+  author={Bethel, E Wes and Camp, David and Donofrio, David and Howison, Mark},
+  booktitle={2015 IEEE International Parallel and Distributed Processing Symposium Workshop},
+  pages={565--574},
+  year={2015},
+  organization={IEEE}
+}
+
+@inproceedings{heinecke2008parallel,
+  title={Parallel matrix multiplication based on space-filling curves on shared memory multicore platforms},
+  author={Heinecke, Alexander and Bader, Michael},
+  booktitle={Proceedings of the 2008 workshop on Memory access on future processors: a solved problem?},
+  pages={385--392},
+  year={2008}
+}
+
+@inproceedings{weidendorfer2007latencies,
+  title={Latencies of conflicting writes on contemporary multicore architectures},
+  author={Weidendorfer, Josef and Ott, Michael and Klug, Tobias and Trinitis, Carsten},
+  booktitle={International Conference on Parallel Computing Technologies},
+  pages={318--327},
+  year={2007},
+  organization={Springer}
+}
+
+@inproceedings{dai2003locality,
+  title={On the locality properties of space-filling curves},
+  author={Dai, HK and Su, Hung-Chi},
+  booktitle={International Symposium on Algorithms and Computation},
+  pages={385--394},
+  year={2003},
+  organization={Springer}
+}
+
+@article{charles2005x10,
+  title={X10: an object-oriented approach to non-uniform cluster computing},
+  author={Charles, Philippe and Grothoff, Christian and Saraswat, Vijay and Donawa, Christopher and Kielstra, Allan and Ebcioglu, Kemal and Von Praun, Christoph and Sarkar, Vivek},
+  journal={Acm Sigplan Notices},
+  volume={40},
+  number={10},
+  pages={519--538},
+  year={2005},
+  publisher={ACM New York, NY, USA}
+}
+
+@article{chamberlain2007parallel,
+  title={Parallel programmability and the chapel language},
+  author={Chamberlain, Bradford L and Callahan, David and Zima, Hans P},
+  journal={The International Journal of High Performance Computing Applications},
+  volume={21},
+  number={3},
+  pages={291--312},
+  year={2007},
+  publisher={Sage Publications Sage UK: London, England}
+}
+
+@inproceedings{bauer2012legion,
+  title={Legion: Expressing locality and independence with logical regions},
+  author={Bauer, Michael and Treichler, Sean and Slaughter, Elliott and Aiken, Alex},
+  booktitle={SC'12: Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis},
+  pages={1--11},
+  year={2012},
+  organization={IEEE}
+}
+
+@inproceedings{whaley1998automatically,
+  title={Automatically tuned linear algebra software},
+  author={Whaley, R Clinton and Dongarra, Jack J},
+  booktitle={SC'98: Proceedings of the 1998 ACM/IEEE conference on Supercomputing},
+  pages={38--38},
+  year={1998},
+  organization={IEEE}
+}
+
+@inproceedings{frigo1998fftw,
+  title={FFTW: An adaptive software architecture for the FFT},
+  author={Frigo, Matteo and Johnson, Steven G},
+  booktitle={Proceedings of the 1998 IEEE International Conference on Acoustics, Speech and Signal Processing, ICASSP'98 (Cat. No. 98CH36181)},
+  volume={3},
+  pages={1381--1384},
+  year={1998},
+  organization={IEEE}
+}
+
+@article{puschel2004spiral,
+  title={Spiral: A generator for platform-adapted libraries of signal processing alogorithms},
+  author={P{\"u}schel, Markus and Moura, Jos{\'e} MF and Singer, Bryan and Xiong, Jianxin and Johnson, Jeremy and Padua, David and Veloso, Manuela and Johnson, Robert W},
+  journal={The International Journal of High Performance Computing Applications},
+  volume={18},
+  number={1},
+  pages={21--45},
+  year={2004},
+  publisher={Sage Publications}
+}
+
+@article{vasilache2018tensor,
+  title={Tensor comprehensions: Framework-agnostic high-performance machine learning abstractions},
+  author={Vasilache, Nicolas and Zinenko, Oleksandr and Theodoridis, Theodoros and Goyal, Priya and DeVito, Zachary and Moses, William S and Verdoolaege, Sven and Adams, Andrew and Cohen, Albert},
+  journal={arXiv preprint arXiv:1802.04730},
+  year={2018}
+}

@@ -1,0 +1,179 @@
+\section{Implementation and Technical Insights}\label{sec:implementation}
+
+The \Noarr{} library\footnote{\url{https://github.com/ParaCoToUl/noarr-structures}} is logically divided into three levels, each building on top of the previous one: \emph{structures}, \emph{functions}, and \emph{object wrappers}. The first two layers provide a rather low-level functional approach, while the last one encapsulates the first two into a more traditional C++ object-oriented design.
+
+% -----------------------------------------------------------------------------
+\subsection{Structures} 
+% -----------------------------------------------------------------------------
+
+A \emph{structure} is an object that stores information about a data layout. It exposes the information via a~simple interface, providing its size in bytes (\texttt{size()}), the range of indices it supports (\texttt{length()}) and a current offset from the beginning of the structure in bytes (\texttt{offset()}).
+
+The most trivial structure is \texttt{scalar} (Listing \ref{lst:scalar}), which wraps the `base' values to be used in more complex layouts. Scalar often wraps simple types like \texttt{float}, but it can also wrap any fixed-size C++ type (such as \texttt{struct} or \texttt{std::tuple}). The methods \texttt{length()} and \texttt{offset()} of \texttt{scalar} always return $0$ because \texttt{scalar} represents only a single element.
+
+\begin{listing}[h]
+  \vspace{-10pt}
+  \inputmintedcpp{noarr/code-snippets/scalar.cpp}
+  \vspace{-20pt}
+  \caption{A core part of the \texttt{scalar} structure used for wrapping simple values}
+  \label{lst:scalar}
+\end{listing}
+
+The \texttt{array} structure (Listing \ref{lst:array}) is more complicated: Like \texttt{std::array}, it represents a~fixed-size array with a named dimension and statically defined number of elements of a given \emph{substructure}~type. Unlike \texttt{scalar} which wraps a \emph{trivial type}, \texttt{array} is contains a \Noarr{} \emph{structural type}.
+
+An important aspect of the structures is their ability to be combined and nested to create a \emph{structure tree}. For instance, the composition of \texttt{scalar} and \texttt{array} is quite straightforward:
+\begin{itemize}
+\item\mintinline[fontsize=\scriptsize]{c++}{array<'a', 10, scalar<float>>}
+defines an array of $10$ \texttt{float}s,
+\item\mintinline[fontsize=\scriptsize]{c++}{array<'i', 4, array<'j', 8, scalar<int>>>}
+represents a~$4\times8$ row-major integer matrix layout,
+\item\sloppy\mintinline[fontsize=\scriptsize]{c++}{array<'j', 8, array<'i', 4, scalar<int>>>}
+represents the same matrix in a column-major layout.
+\end{itemize}
+
+\begin{listing}[h]
+  \vspace{-10pt}
+  \inputmintedcpp{noarr/code-snippets/array.cpp}
+  \vspace{-20pt}
+  \caption{\Noarr{} \texttt{array} structure (some methods are omitted for brevity)}
+  \label{lst:array}
+\end{listing}
+
+All structures inherit from class \texttt{contain}, which has several purposes: It serves as recursive storage for the wrapped structure, holds some useful meta-information about the nested substructures, and stores possible additional data for the structure, such as dynamic dimension length or the current offset index. Querying for various properties, which is its main purpose, is demonstrated in Listing \ref{lst:array}. The \texttt{array} implements the \texttt{size()} function using the information (size) from its immediate substructure (line $4$). In the example, queries work recursively on subsequent immediate substructures until the recursion is halted in \texttt{scalar::size()}. Using this mechanism, \texttt{contain} allows us to create the nested hierarchy of the structure tree easily.
+
+There are several other built-in structures in \Noarr{} library, such as \texttt{vector} and \texttt{tuple} (analogical to \texttt{std::vector} and \texttt{std::tuple}), which provide sufficient arsenal for composing memory layouts of many regular-shaped data structures. Moreover, the library design makes it open for extensions, and programmers may implement additional custom layout structures.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Functions}
+% -----------------------------------------------------------------------------
+
+\Noarr{} \emph{functions} are C++ \mintinline{c++}{constexpr} functions that serve as an expressive tool for obtaining complex information from the structure trees. They are used to compute offsets for memory pointers to provide indexation, transform structures, and query dimension lengths using a single, extensible functional interface.
+
+Calling function \texttt{f} on a structure \texttt{s} is achieved using the (overloaded) `pipe' operator \texttt{|}. Expression \texttt{s | f} denotes that \texttt{f} is applied on \texttt{s} (note this may sometimes differ from \texttt{f(s)} as detailed later in this section).
+
+For example, the function \texttt{get\_length()} traverses structure tree and calls \texttt{length()} on a substructure with the given dimension name:
+\begin{minted}[fontsize=\scriptsize]{c++}
+  size_t i_len = a_structure | get_lenght<'i'>();
+\end{minted}
+
+The function \texttt{set\_length()} proceeds similarly, but when a matching substructure is found, the whole structure is reconstructed to carry the new length. The following example shows that functions can be additionally chained one after another. Notably, all structures are immutable, which allowed us to ensure that \texttt{unsized\_s} does not carry any unnecessary data:
+\begin{minted}[fontsize=\scriptsize]{c++}
+  auto unsized_s = vector<'i', vector<'j', scalar<float>>>();
+  auto sized_s = unsized_s | set_length<'i'>(4) | set_length<'j'>(8);
+\end{minted}
+
+A function application on a structure may fail, such as when querying a~length of a non-existing dimension. We say the function is \emph{not applicable} on a~structure. Taking the aforementioned two functions into account and the fact that every structure forms a structure tree, it is possible that a~function is not \emph{directly applicable} on the topmost structure but is applicable on some structures in the structure tree. For this reason, we distinguish three \emph{piping mechanisms} that govern different means of the function-structure application:
+
+\begin{itemize}
+    \item \emph{Top application} (or \emph{direct application}). This is the simplest form of piping, where \texttt{s | f} is equivalent to \texttt{f(s)}. In other words, the function is applied directly to the topmost structure. 
+    \item \emph{Get application}. Given the piping \texttt{s | f}, if \texttt{f(s)} is not applicable the piping mechanism attempts to apply \texttt{f} to the substructures of \texttt{s} recursively. It fails if \texttt{f} does not apply to any of the substructures or if it applies to more substructures. The trivial representative being \texttt{get\_length()}, because there should be exactly one node in a structure tree with a specified dimension.   
+    \item \emph{Transform application}. \texttt{s | f} either results in top application when \texttt{f(s)} is applicable or \texttt{f} is transformatively applied on all \emph{direct} substructures of \texttt{s}. If the latter, the structure is reconstructed with these changes to the substructures. 
+\end{itemize}
+
+The piping mechanism is implemented using C++ \mintinline{c++}{constexpr} functions and metaprogramming. Together with the static nature of substructure hierarchies that encompasses the structure layer, the implementation is very efficient since it provides the necessary space for compiler optimizations. We can demonstrate this by precisely describing the operations executed when a function with the get application is applied to a structure. Let us have the following structure and function:
+\begin{minted}[fontsize=\scriptsize]{c++}
+  auto v4 = vector<'a', vector<'b', vector<'c', vector<'d', scalar<int>>>>>();
+  auto f = get_length<'d'>();
+\end{minted}
+Expression \texttt{v4 | f} must perform a traversal of the structure tree to find the matching dimension. Fortunately, the way the structures and functions are implemented ensures that there is no run-time loop in the implementation. Because all substructures are known in compile-time, the traversal loop is unrolled using metaprogramming techniques. Furthermore, because the values are also known at compile-time, the result can be partially evaluated and, in turn, \emph{no run-time code is generated}. In summary, applying \texttt{v4 | f} produces four unrolled function applications, three of which produce no operation at all (and usually get discarded by a compiler), and only one results in calling \texttt{length()} on a~substructure that can be evaluated by the compiler.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Object wrappers} 
+% -----------------------------------------------------------------------------
+
+Object wrappers provide object-oriented management of structures, functions, and the actual data. \Noarr{} library offers two kinds of such objects --- structure \emph{wrappers} and \texttt{bags}.
+
+A \texttt{wrapper} simplifies the work with structures by bundling the applications of the most common \Noarr{} functions into member methods. That way, with a wrapper \texttt{w} of a structure \texttt{s} we can directly write \mintinline{c++}{w.get_length<'d'>()} instead of \mintinline{c++}{s | get_length<'d'>()}.
+
+A \texttt{bag} provides the same interface as a~\texttt{wrapper} but also contains a pointer to the underlying memory. To work with the data, it implements a~member method \mintinline{c++}{at<Dims...>(idxs...)} that is used to index the data pointer with respect to the enveloping structure layout. This method is a wrapper for the library function \texttt{get\_at}. Without using a \texttt{bag}, the indexing might look like this:
+\begin{minted}[fontsize=\scriptsize]{c++}
+  auto s = array<'j', 8, array<'i', 4, scalar<float>>>();
+  float* ptr = allocate_memory_bytes(s.size());
+  float x = s | get_at<'i', 'j'>(ptr, 2, 3);
+\end{minted}
+The \texttt{bag} binds the layout together with data, systematizing the computation on the last line as follows:
+\begin{minted}[fontsize=\scriptsize]{c++}
+  auto b = bag(s, ptr);
+  float x = b.at<'i', 'j'>(2, 3);
+\end{minted}
+
+Furthermore, to manage an explicitly bound external pointer, \texttt{bag} can also allocate the underlying memory automatically if no pointer is given (i.e., it also carries the semantics of a smart pointer). Technically, \texttt{bag} can belong to either one of two semantic groups according to the way it acquires data:
+\begin{itemize}
+    \item \emph{Owning semantics.} The bag is constructed only with a structure to envelop. The data pointer of exact length is automatically allocated using standard memory management (e.g., by \texttt{unique\_ptr}), and the length is determined by calling \texttt{size()} on the wrapped structure.
+    \item \emph{Borrowing semantics.} The bag is constructed with both structure and data pointer. In this case, the deallocation, as well as ensuring the proper data-block length, has to be enforced by the caller.
+\end{itemize}
+
+
+
+% \begin{enumerate}
+%     \item \emph{Structures} --- .
+%     \item \emph{Functions} --- C++ pure constexpr functions that serve as an expressive tool to obtain complex information from a tree of structures.
+%     \item \emph{Object wrappers} --- Classes that provide object oriented wrappers on top of the previous layers.
+% \end{enumerate}
+
+% \Noarr{} library distinguishes three objects:
+% \begin{itemize}
+%     \item \texttt{Structure} A small, tree-like object, that represents the structure of the data. It does not contain the data itself, nor a pointer to the data. It can be thought of as a function that maps indices to memory offsets (in bytes). It stores information, such as data dimensions and tuple types.
+%     \item \texttt{Data} A continuous block of bytes that contains the actual data. Its structure is defined by a corresponding Structure object.
+%     \item \texttt{Bag} Wrapper object, which combines structure and data together.
+% \end{itemize}
+
+% \subsection{Structure}
+
+% Supported layouts:
+% \begin{itemize}
+%     \item \texttt{Containers} Vector or array. 
+%     \item \texttt{Scalars} int, float, size\_t.
+%     \item \texttt{Tuples} Ordered set of previous two.
+% \end{itemize}
+
+% \subsection{Functions}
+
+% Means of modifying structures and applying them on data.
+
+% \begin{itemize}
+%     \item \texttt{get\_length get\_offset} ... read
+%     \item \texttt{set\_length, fix} ... modify  
+%     \item \texttt{get\_at} ... index
+% \end{itemize}
+
+% \subsection{Internal representation}
+
+% Thx to majority of logic is in functions, actual layout structure is very simple.
+
+% implemented as a tree of sub structures ... easily extensible ... show simple example (reverse vector)
+
+% \subsection{Data and Bag}
+
+% Data must be continuous (no jagged).
+
+% Bag acquires data 2 ways:
+% \begin{itemize}
+%     \item \emph{borrowing semantics} gets data via pointer as constructor param
+%     \item \emph{owning semantics} allocates data using standard memory management
+% \end{itemize}
+
+
+
+% nasledujici text je zkopirovan z paper.tex (brainstorming), bure potreba to jeste poradne rozmyslet (aby tahle sekce nebyla moc tlusta, ale byla vystizna); rozhodne to nema byt reference kodu
+% (quick peek on the most important structures + how they are implemented, this must not look like a reference)
+
+% 1. built-in struktury vector, array, scalar, tuple
+% 2. ako sa s nimi pracuje: bag, set\_length, indexovanie, structure wrapper
+% 3. impl. details?
+
+% \section{Flexible data layout}
+
+% 1. noarr je plne rozsiritelny na definovanie vlastneho layoutu. ukazat na jednoduchom priklade
+% ako sa to robi (reverse-vector/matrix napr.)
+% 1.1. vysvetlit noarr::compose <=> std::tuple
+% 1.2. vysvetlit vyznam preco vsetko je constexpr  
+% 2. na vacsom priklade ukazat predosle body (cache aware layout na matmul v CUDE) + porovnat s trivial impl
+
+% \section{Easy switch between layouts in noarr workflows}
+
+% 1. ukazat, ze noarr sturktury su vo funkcii/kerneli zamenne
+% 2. ukazat moznost jednoduchej transformacie medzi layoutmi
+% 2.1. ukazat funckie na vlozenie transformacnej vrstvy do algoritmu
+% 3. na vacsom priklade ukazat predosle body - full-blown aplikacia transformacnych vrstiev + layoutingu (porovnat wall time [i s transformaciou] oproti algoritmu s trivialnym layoutom)

@@ -70,7 +70,7 @@ In particular, we describe a data structure that can be used to accelerate HCA a
 We subjected the implementation to comprehensive experimental evaluation and compared it with the existing implementation of MHCA to measure the achieved speedup.
 Finally, we made the implementation available as open-source\footnote{\url{https://github.com/asmelko/gmhc}}, making it useful for both biological research and further experiments with parallelization of HCAs.
 
-The mathematical and algorithmic overview of MHCA clustering is presented in Section~\ref{sec:mhca}, Section~\ref{sec:implementation} describes our proposed GPU implementation. We summarize the experimental evaluation in Section~\ref{sec:experiments}. Section~\ref{sec:relwork} puts the our research in proper context with prior work and Section~\ref{sec:conclusions} concludes the paper.
+The mathematical and algorithmic overview of MHCA clustering is presented in Section~\ref{sec:mhca}, Section~\ref{sec:maha_implementation} describes our proposed GPU implementation. We summarize the experimental evaluation in Section~\ref{sec:experiments}. Section~\ref{sec:maha_relwork} puts the our research in proper context with prior work and Section~\ref{sec:conclusions} concludes the paper.
 
 
 \section{Hierarchical Clustering with Mahalanobis Distance}\label{sec:mhca}
@@ -125,7 +125,7 @@ While this construction is intuitively correct and allows the clustering to prec
 	\item Because the Mahalanobis distance of a fixed point to a cluster \emph{decreases} when the cluster size increases (e.g., as a result of being merged with another cluster), the minimal dissimilarity selected in the step 3 of the algorithm may sometimes be smaller than the previously selected one.
   A correction is thus needed to keep the dissimilarity sequence properly monotonic, giving uncluttered, interpretable dendrogram display~\cite{everitt2002cambridge}.
 	\item The amount of required computation is significantly higher than with the other linkages (dissimilarity functions), requiring additional operations for computing the inverted covariance matrix and covariance-scaled Euclidean distances.
-  We mitigate this problem by massive parallelization with GPU accelerators, as detailed in Section~\ref{sec:implementation}.
+  We mitigate this problem by massive parallelization with GPU accelerators, as detailed in Section~\ref{sec:maha_implementation}.
 \end{itemize}
 
 The computation of the `full' average Manalanobis distance is unavoidably demanding, requiring many matrix-vector multiplications to compute distances between all points of one cluster and the opposite cluster.
@@ -191,7 +191,7 @@ In the following section, we address these problems with optimizations that make
 In particular, we show that the computation of a covariance matrix can be divided into many independent parts, thus exposing sufficient parallelization opportunities, and we demonstrate a technique for efficient caching of intermediate contents of the dissimilarity matrix to reduce the memory footprint and throughput requirements of the algorithm.
 
 % -----------------------------------------------------------------------------
-\section{GPU Implementation}\label{sec:implementation}
+\section{GPU Implementation}\label{sec:maha_implementation}
 % -----------------------------------------------------------------------------
 
 Memory handling optimizations form the essential part of our GPU implementation of MHCA, here called \emph{GMHC} for brevity.
@@ -426,7 +426,7 @@ In summary, modern GPUs have been able to accelerate the MHCA task by more than 
 
 
 % -----------------------------------------------------------------------------
-\section{Related Work}\label{sec:relwork}
+\section{Related Work}\label{sec:maha_relwork}
 % -----------------------------------------------------------------------------
 
 The original version of MHCA clustering for flow cytometry by Fišer~et~al.~\cite{fivser2012detection} used a MATLAB implementation to analyze datasets of around $10^4$ multi-dimensional data points.
