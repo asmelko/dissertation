@@ -148,20 +148,54 @@ Abstract.
 
 \chapter{Introduction}
 
+GPUs are hard
+
+there are many ways to do things
+
+there is a lot of things to think about
+
+there are many things to optimize for
+
+following works show challenges and solutions to them
+
+\section{GPU architecture}
+
+task parallelism using streams
+
 \chapter{GPU optimizations of data-intensive scientific algorithms}
 
 \section{Hierarchical clustering with Mahalanobis distance}
 
-nearest neighbor array instead of dissimilarity matrix
+\subsection{Definition of hierarchical clustering}
+
+\subsection{Definition of Mahalanobis distance}
+
+mention multiple ways of subthreshold handling 
+
+\subsection{Prior solution and its limitations}
+
+\subsection{Optimized solution}
+
+nearest neighbor array instead of dissimilarity matrix to reduce space complexity and enable 1M data points
+
 neighbor buffer - more than just one neighbor
+
 task parallelism using streams
 
 
 
 \section{Neighborhood-based dimensionality reduction}
 
-data intensive projections 
+definition of dimensionality reduction
+
+limitations of real time processing
+
+
+optimizations:
+
+memory-heavy stuff:
 - using registers as caches
+- vector loads
 
 \section{Cross-correlation}
 
@@ -169,9 +203,21 @@ much more detailed register usage
 
 \section{Stochastic simulation of Boolean networks}
 
+definition of stochastic simulation
+
+limitations of real time processing
+
 runtime compilation and linkage of model code
 
 \chapter{Streamlining the development of parallel algorithms using Noarr}
+
+what are memory layouts 
+
+introduce the abstraction
+
+what can we do with it? layout agnostic code
+
+what more? traversal transformations
 
 \section{memory layouts}
 
