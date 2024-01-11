@@ -148,13 +148,28 @@ Abstract.
 
 \chapter{Introduction}
 
-\chapter{GPU optimizations of data-intensive algorithms in bioinformatics}
+\chapter{GPU optimizations of data-intensive scientific algorithms}
 
 \section{Hierarchical clustering with Mahalanobis distance}
 
+nearest neighbor array instead of dissimilarity matrix
+neighbor buffer - more than just one neighbor
+task parallelism using streams
+
+
+
 \section{Neighborhood-based dimensionality reduction}
 
+data intensive projections 
+- using registers as caches
+
+\section{Cross-correlation}
+
+much more detailed register usage 
+
 \section{Stochastic simulation of Boolean networks}
+
+runtime compilation and linkage of model code
 
 \chapter{Streamlining the development of parallel algorithms using Noarr}
 
@@ -166,10 +181,16 @@ Abstract.
 
 \part{Contributions}
 
-\include{Mahalanobis/paper}
-\include{noarr/main}
-\include{crosscorr/src/manuscript}
-\include{embedsom/paper}
+% \include{Mahalanobis/paper}
+% \include{noarr/main}
+% \include{crosscorr/src/manuscript}
+% \include{embedsom/paper}
+
+\chapter{GPU-accelerated Mahalanobis-average Hierarchical Clustering Analysis}
+\chapter{Astute Approach to Handling Memory Layouts of Regular Data Structures}
+\chapter{Efficient GPU-accelerated Parallel Cross-correlation}
+\chapter{GPU-acceleration of neighborhood-based dimensionality reduction algorithm EmbedSOM}
+
 
 \chapter{Pure C++ Approach to Optimized Parallel~Traversal of Regular Data~Structures}
 
