@@ -148,6 +148,28 @@ Abstract.
 
 \chapter{Introduction}
 
+The general purpose GPU programming (GPGPU programming) has estabilished a strong possition in the domain of high performance computing. 
+GPU programming enables parallel execution of many threads on a single device, exploiting the massive computational power and memory bandwidth of modern GPUs. 
+GPUs are no longer used exclusively for graphics rendering and since the advent of CUDA framework (and other alike), they have become a viable alternative to CPUs for high performance computing.
+Nowadays, the top datacenters in the world are equipped with GPUs and they are used for a wide range of tasks, including machine learning, data analytics, and scientific computing.
+
+Naturally, GPUs are not a silver bullet and they are not suitable for all tasks. Generally, the GPU threading model favors data-parallel tasks with high arithmetic intensity.
+Also, GPU programming also poses many challenges, such as complex hardware architectures, heterogeneous programming models, memory management, performance tuning, and portability.
+Arguably the most challenging part of GPU programming is the multiple levels of parallelism that need to be exploited to achieve high performance and an ample knowledge in the GPU memory spaces and CPU-GPU memory management.
+
+The evergrowing list of new CUDA features, such as dynamic parallelism, asynchronous memory copy, independent memory pools, kernel launch buffering, collective shared memory, tensor cores, and many more, gives the programmers a huge help in achieving the peak performance of the GPU in their applications.
+However, this also means that the GPU programming is becoming more and more complex and the programmers need to be aware of all the new features and how to use them to their advantage.
+Apart from that, there is generally not a single `optimal' solution to the problem and the programmers need to develop multiple variants which must be empirically tested in order to find the best optimization.
+
+Generally, GPUs allow the algorithms to scale to bigger input data sizes or provide real-time processing capabilities. ...
+
+This thesis includes the GPU optimizations for a set of scientific algorithms, each of which employing a different tool in GPU programming toolbox. 
+It includes enabling bigger datasets for computationally-heavy variant of hierarchical clustering, real-time processing of neighborhood-based dimensionality reduction, analysis of different optimizations for cross-correlation, and a GPU-accelerated implementation of a stochastic simulation of Boolean networks.
+The second part describes a Noarr library, which is a direct product of the work on the first part of the thesis and aims to simplify and streamline the most important part of GPU programming - the memory management.
+
+
+
+
 GPUs are hard
 
 there are many ways to do things
