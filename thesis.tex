@@ -143,82 +143,16 @@ Abstract.
 
 \include{preface}
 
-%%% Each chapter is kept in a separate file
 \part{Commentary}
-
 \include{introduction}
-
-
-\chapter{GPU optimizations of data-intensive scientific algorithms}
-
-
-
-\section{Hierarchical clustering with Mahalanobis distance}
-
-In the field of bioinformatics, the hierarchical clustering is a popular method for analyzing gene expression data.
-The hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters based on their similarity.
-
-Although hierarchical clustering is a simple algorithm, the parallel implementation faces challanges in the form of load balancing.
-It gets more complex with the computationally expensive Mahalanobis distance, which is used to measure the similarity of the data points.
-
-\subsection{Definition of hierarchical clustering}
-
-\subsection{Definition of Mahalanobis distance}
-
-mention multiple ways of subthreshold handling 
-
-\subsection{Prior solution and its limitations}
-
-\subsection{Optimized solution}
-
-nearest neighbor array instead of dissimilarity matrix to reduce space complexity and enable 1M data points
-
-neighbor buffer - more than just one neighbor
-
-task parallelism using streams
+\include{gpu-intro}
+\include{gpu-optims}
 
 
 
-\section{Neighborhood-based dimensionality reduction}
-
-definition of dimensionality reduction
-
-limitations of real time processing
 
 
-optimizations:
 
-memory-heavy stuff:
-- using registers as caches
-- vector loads
-
-\section{Cross-correlation}
-
-much more detailed register usage 
-
-\section{Stochastic simulation of Boolean networks}
-
-definition of stochastic simulation
-
-limitations of real time processing
-
-runtime compilation and linkage of model code
-
-\chapter{Streamlining the development of parallel algorithms using Noarr}
-
-what are memory layouts 
-
-introduce the abstraction
-
-what can we do with it? layout agnostic code
-
-what more? traversal transformations
-
-\section{memory layouts}
-
-\section{layout agnostic code}
-
-\section{traversal transformations}
 
 \part{Contributions}
 

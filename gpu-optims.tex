@@ -1,0 +1,66 @@
+\chapter{Employing GPUs in scientific algorithms}
+
+The information age has brought a massive increase in the amount of data that is being collected and processed. The `data explosion' can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data gathering devices (i.e., cytometers in bioinformatics, optic sensors in physics, seismometers in geology, etc.). The amount of data is simply too large to be processed in a required time using. To alleviate this apparent pressure, the corresponding algorithm (which typically have super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can in return be the ability to assess bigger data, use more detailed processing methods or to analyze the data in real time.
+
+This chapter enumerates four selected scientific algorithms and discusses their challenges in porting to GPUs to enable higher performance.
+
+\section{Hierarchical clustering with the Ma\-ha\-la\-no\-bis linkage}
+
+In the field of bioinformatics, the hierarchical clustering is a popular method for analyzing various types of data. 
+The hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some linkage criterion. 
+The simplest linkage may be computed as a minimum of Euclidean distances between the data points in the clusters.
+But the Mahalanobis linkage has been shown to produce better results than the common linkages.
+
+Mahalanobis linkage used Mahalanobis distance to measure the similarity of the data clusters. Mahalanobis distance is defined between a point $x$ and a set of points $P$ as
+$$ d(x, P) = \sqrt{(x - P)^Tcov(P)(x - P)}$$,
+where P is the set mean and cov(P) is the covariance matrix of the set P (if interpreted as a `distribution of points').
+The distance has a specific property which can be intuitevely interpreted as a Euclidean distance to a center of a set which `accounts' the shape and size of the cluster. In other words, the Mahalanobis distance is a Euclidean distance in a transformed space, such that the covariance matrix of a cluster is the identity matrix.
+
+In the Mahalanobis linkage, the distance between two clusters is defined as the average of Mahalanobis distances between their means and each other.
+This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity. 
+To compute the Mahalanobis distance, we need to compute the mean of a cluster and an inverse of its covariance matrix and finally do an actual distance computation which are two matrix multiplications.
+
+Another challenge is memory consumption. 
+
+\subsection{Definition of hierarchical clustering}
+
+\subsection{Definition of Mahalanobis distance}
+
+mention multiple ways of subthreshold handling 
+
+\subsection{Prior solution and its limitations}
+
+\subsection{Optimized solution}
+
+nearest neighbor array instead of dissimilarity matrix to reduce space complexity and enable 1M data points
+
+neighbor buffer - more than just one neighbor
+
+task parallelism using streams
+
+
+
+\section{Neighborhood-based dimensionality reduction}
+
+definition of dimensionality reduction
+
+limitations of real time processing
+
+
+optimizations:
+
+memory-heavy stuff:
+- using registers as caches
+- vector loads
+
+\section{Cross-correlation}
+
+much more detailed register usage 
+
+\section{Stochastic simulation of Boolean networks}
+
+definition of stochastic simulation
+
+limitations of real time processing
+
+runtime compilation and linkage of model code
