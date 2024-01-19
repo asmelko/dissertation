@@ -20,25 +20,17 @@ In the Mahalanobis linkage, the distance between two clusters is defined as the 
 This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity. 
 To compute the Mahalanobis distance, we need to compute the mean of a cluster and an inverse of its covariance matrix and finally do an actual distance computation which are two matrix multiplications.
 
-Another challenge is memory consumption. 
-
-\subsection{Definition of hierarchical clustering}
-
-\subsection{Definition of Mahalanobis distance}
-
-mention multiple ways of subthreshold handling 
-
 \subsection{Prior solution and its limitations}
+
+High computational complexity limited the original implementation of the algorithm to a maximum thousands of dataset points. To overcome this limitation, the authors developed the method of apriori clusters to reduce the dataset size for the sake of the accuracy. The apriori clustering is a preprocessing step in which small clusters are created using Euclidean distance. Then these clusters are inputed to the main algorithm. This allowed to push the limits of the original implementation in orders of magnitude, but at a cost of less accurate results.
+
+The memory complexity is also a limiting factor. The original implementation uses a dissimilarity matrix to store the distances between the clusters. Although this data structures saves computation time (in distance evaluation), it has quadratic memory complexity. This limits the size of the dataset to a few thousands of points.
 
 \subsection{Optimized solution}
 
-nearest neighbor array instead of dissimilarity matrix to reduce space complexity and enable 1M data points
+In our solution, we use a nearest neighbor array instead of the dissimilarity matrix. This allows us to reduce the memory complexity to linear. The nearest neighbor array is a one-dimensional array of size $n$ where $n$ is the number of clusters. Each element of the array contains the index of the nearest neighbor of the corresponding cluster. Although it requires more updates in the worst case, we used a simple optimization to buffer multiple nearest neighbors for each cluster.
 
-neighbor buffer - more than just one neighbor
-
-task parallelism using streams
-
-
+The other challenge was that the complete solution was composed of multiple kernels of different duration. The computation of covariance matrix is fast at the beginning of the algorithm (because the clusters are small) while nearest neighbor list updates are slow (because there are more potential neighbors to update). Thankfully, these two kernels are independent and can be executed in parallel. We used CUDA streams to overlap the execution of these two kernels and thus keeping the high utilization of the GPU.
 
 \section{Neighborhood-based dimensionality reduction}
 
