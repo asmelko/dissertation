@@ -34,10 +34,20 @@ The other challenge was that the complete solution was composed of multiple kern
 
 \section{Neighborhood-based dimensionality reduction}
 
-definition of dimensionality reduction
+EmbedSOM is a dimensionality reduction tool based on self-organizing maps (SOM). It competes with other dimensionality reduction tools such as t-SNE or UMAP giving the advantage of better computational complexity which favors it as a semi-supervised real-time dataset analytic tool while retaining the competitive accuracy of the results.
+Although achieving a good performance, a true real time visualisation on big datasets was lacking. 
 
-limitations of real time processing
+In the landmark based dimensionality reduction method, high dimensional data points are mapped to lower-dimensonal space according to the location to a set of landmarks, which have low-dimensional counterparts.
+The EmbedSOM algorithm encompasses the following steps for each point:
+\begin{enumerate}
+    \item A set of $k$ nearest landmarks is found and scored according to the distance to the point.
+    \item For each pair of the nearest landmarks (u,v), do the orthogonal projection of the point to the line between the landmarks and select the suitable low-dimensional mapping.
+\end{enumerate}
 
+The challenges of this algorithm is the low arithmetic intensity in both steps - generally, we want to execute the most operations on read data but if taken naively, each acessed data point would be presented with just one operation (either euclidean projection or distance computation).
+There are two approaches on dealing with this problem - either design a smart caching of read data so it is used in multiple operations or design a kernel with high thread occupancy so the latency of retriving the data is hidden by scheduling multiple threads.
+
+We used both approaches in our implementation. The kNN step is implemented using bitonic sort, which promotes the overlapping of data with computation. In the projection step, each thread loads multiple landmarks into registers such that it can perform multiple ortogonal projections in parallel. This approach is similar to the one used in the Mahalanobis linkage.
 
 optimizations:
 
@@ -47,7 +57,22 @@ memory-heavy stuff:
 
 \section{Cross-correlation}
 
-much more detailed register usage 
+Cross-correlation is a method for finding the similarity of two signals. It is used in many fields of science, such as image processing, seismology, bioinformatics, etc. For discrete 1D signals, the cross-correlation is defined as
+$$ \sum_{i=0}^{n-1} x_i y_{i + \tau} $$
+where $x$ and $y$ are the signals and $\tau$ is the shift of the second signal. The cross-correlation is usually computed for all possible shifts. Depending on the application, the maximum or minimum of the cross-correlation is used as a measure of similarity.
+We devoted our attention to the cross-correlation of 2D signals, which can be defined as a sum of element-wise products of all the overlaps between the two signals. The cross-correlation of two 2D signals is therefore a 2D matrix.
+
+This problem combines the challenges from the previous examples. Specifically, we have
+\begin{itemize}
+    \item poor load balancing - the computation of each element of the output matrix takes a different amount of time
+    \item low arithmetic intensity - the computation of each element of the output matrix requires a small amount of arithmetic operations
+\end{itemize}
+
+The solution for the first problem could be a dynamic parallelism. However, the problem size, which we paid our attention to, was too small to justify the overhead of dynamic parallelism. Therefore, we had to come up with a different solution of smart work distribution.
+
+For the second problem, we evvaluated different approaches of data caching in registers.
+
+In the result, we achieved a better performance than the asymtotically better methods (such as FFT-based cross-correlation) for small problem sizes.
 
 \section{Stochastic simulation of Boolean networks}
 
