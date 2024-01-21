@@ -55,6 +55,13 @@ Hierarchical Clustering (HC) is a well known problem and there are many algorith
 
 C application \texttt{mhclust}, the original implementation of the Mahalanobis HC, uses the dissimilarity matrix. This approach is simple and allows for a straightforward implementation. However, the empirical data reveal the biggest limiting factor in the quadratic memory complexity. This is supported more by the fact that GPU memory is typically limited to a few gigabytes. Therefore, we decided to use the nearest neighbor array approach. This approach has a hidden benefit --- if a number of neighbors to update in an iteration is constant $u$, the time complexity of the algorithm is reduced to $\mathcal{O}(d \cdot n^2 \cdot u)$. This is also supported by the evaluation on real data, where the number of neighbors to update is typically in the range of 10 to 100. 
 
+- maybe better start with DM and PQ - describe the costly parts of the loop with DM and show optimizations with PQ
+- then, start with memory limitations in the original impl
+- then, propose in-place distance computation and optimization of the nearest neighbor arrays and neighbor buffering
+- then, show the results ? - how bigger the data can be assuming X GB of memory
+
+- future work: tensor cores, cuda graph
+
 
 \subsection{Prior solution and its limitations}
 
