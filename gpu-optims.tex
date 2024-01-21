@@ -7,18 +7,54 @@ This chapter enumerates four selected scientific algorithms and discusses their 
 \section{Hierarchical clustering with the Ma\-ha\-la\-no\-bis linkage}
 
 In the field of bioinformatics, the hierarchical clustering is a popular method for analyzing various types of data. 
-The hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some linkage criterion. 
-The simplest linkage may be computed as a minimum of Euclidean distances between the data points in the clusters.
-But the Mahalanobis linkage has been shown to produce better results than the common linkages.
+In general, hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some linkage criterion.
+It is an iterative method that starts with each data point being a cluster and in each iteration merges the two most similar clusters according to the linkage criterion until there is only one cluster.
+There are many cluster linkage criteria, each of them having its own advantages and disadvantages. 
+The most common linkage is the \emph{centroid linkage} which computes the distance between the clusters centroids (the mean points).
+In analyzing single-cell cytometry data, hierarchical clustering with the Mahalanobis linkage has been shown to be the most suitable method.
 
-Mahalanobis linkage used Mahalanobis distance to measure the similarity of the data clusters. Mahalanobis distance is defined between a point $x$ and a set of points $P$ as
-$$ d(x, P) = \sqrt{(x - P)^Tcov(P)(x - P)}$$,
-where P is the set mean and cov(P) is the covariance matrix of the set P (if interpreted as a `distribution of points').
-The distance has a specific property which can be intuitevely interpreted as a Euclidean distance to a center of a set which `accounts' the shape and size of the cluster. In other words, the Mahalanobis distance is a Euclidean distance in a transformed space, such that the covariance matrix of a cluster is the identity matrix.
+Mahalanobis linkage uses \emph{Mahalanobis distance} to measure the similarity between clusters:
+\begin{defn}[Mahalanobis distance]
+	Suppose a probability distribution $C$ on $\R^d$ with mean $\bar{C} \in \R^d$ and a convariance matrix $\cov(C)$. If the matrix $\cov(C)$ is regular, we define the \emph{Mahalanobis distance} between $u \in \R^d$ and $C$ as
+	\begin{equation}
+	d_\text{Maha}(u,C) = \sqrt{(u-\bar{C})^T\cov(C)^{-1}(u-\bar{C})}.
+	\end{equation}\label{eq01:maha}
+\end{defn}
 
-In the Mahalanobis linkage, the distance between two clusters is defined as the average of Mahalanobis distances between their means and each other.
-This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity. 
-To compute the Mahalanobis distance, we need to compute the mean of a cluster and an inverse of its covariance matrix and finally do an actual distance computation which are two matrix multiplications.
+If we generalize a centroid of a cluster to a probability distribution, Definition~\ref{eq01:maha} can be used to define the Mahalanobis distance between a point and a cluster. To extend the definition to a distance between two clusters, we use the following equation:
+\begin{equation}
+    \delta_\text{Maha}(P,Q) = \frac{d_\text{Maha}(\bar{P},Q) + d_\text{Maha}(\bar{Q},P)}{2}
+\end{equation}\label{eq01:maha_linkage}
+
+To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipsis are alongside rather than in a prolongation of one another [TODO] (see Figure~\ref{fig:ellipses}). 
+Only when the objects of a cluster form a spherical shape, this measure of dissimilarity is proportional to the euclidean distance with a corresponding linkage.
+This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity materialized in the computation of covariance matrix, matrix inverse and vector-matrix-vector multiplication in each distance evaluation.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\textwidth]{img/ellipses.pdf}
+    \caption{Two pairs of clusters with different simillarities according to Mahalanobis distance}
+    \label{fig:ellipses}
+\end{figure}
+
+% where P is the set mean and cov(P) is the covariance matrix of the set P (if interpreted as a `distribution of points').
+% The distance has a specific property which can be intuitevely interpreted as a Euclidean distance to a center of a set which `accounts' the shape and size of the cluster. In other words, the Mahalanobis distance is a Euclidean distance in a transformed space, such that the covariance matrix of a cluster is the identity matrix.
+
+% In the Mahalanobis linkage, the distance between two clusters is defined as the average of Mahalanobis distances between their means and each other.
+% This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity. 
+% To compute the Mahalanobis distance, we need to compute the mean of a cluster and an inverse of its covariance matrix and finally do an actual distance computation which are two matrix multiplications.
+
+\subsection{Algorithm complexity and the implementation}
+
+Hierarchical Clustering (HC) is a well known problem and there are many algorithms which effectively solve it. Roughly, they can be divided into categories according to the data structures they employ [TODO]:
+\begin{itemize}
+    \item HC with a dissimilarity matrix --- the most straightforward approach; the dissimilarity matrix stores the distances between all pairs of clusters. This approach has a cubic time complexity and quadratic memory complexity.
+    \item HC with a nearest neighbor array --- each cluster stores the index of its nearest neighbor. This approach trades a linear memory complexity for an asymptotic time complexity of $\mathcal{O}(d \cdot n^3)$.
+    \item HC with an array of priority queues --- a more sophisticated solution, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$.
+\end{itemize}
+
+C application \texttt{mhclust}, the original implementation of the Mahalanobis HC, uses the dissimilarity matrix. This approach is simple and allows for a straightforward implementation. However, the empirical data reveal the biggest limiting factor in the quadratic memory complexity. This is supported more by the fact that GPU memory is typically limited to a few gigabytes. Therefore, we decided to use the nearest neighbor array approach. This approach has a hidden benefit --- if a number of neighbors to update in an iteration is constant $u$, the time complexity of the algorithm is reduced to $\mathcal{O}(d \cdot n^2 \cdot u)$. This is also supported by the evaluation on real data, where the number of neighbors to update is typically in the range of 10 to 100. 
+
 
 \subsection{Prior solution and its limitations}
 
