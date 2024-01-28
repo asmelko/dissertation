@@ -1,24 +1,24 @@
 \chapter{Employing GPUs in scientific algorithms}
 
-The information age has brought a massive increase in the amount of data that is being collected and processed. The `data explosion' can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data gathering devices (i.e., cytometers in bioinformatics, optic sensors in physics, seismometers in geology, etc.). The amount of data is simply too large to be processed in a required time using. To alleviate this apparent pressure, the corresponding algorithm (which typically have super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can in return be the ability to assess bigger data, use more detailed processing methods or to analyze the data in real time.
+The information age has brought a massive increase in the amount of data that is being collected and processed. The `data explosion' can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data-gathering devices (i.e., cytometers in bioinformatics, optic sensors in physics, seismometers in geology, etc.). The amount of data is simply too large to be processed in the required time. In order to alleviate this apparent pressure, the corresponding algorithm (which typically has super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can result in the ability to assess bigger data, use more detailed processing methods, or analyze the data in real time.
 
 This chapter enumerates four selected scientific algorithms and discusses their challenges in porting to GPUs to enable higher performance.
 
 \section{Hierarchical clustering with the Ma\-ha\-la\-no\-bis linkage}
 
-In the field of bioinformatics, the hierarchical clustering is a popular method for analyzing various types of data. 
+In the field of bioinformatics, hierarchical clustering is a popular method for analyzing various types of data. 
 In general, hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some linkage criterion.
-It is an iterative method that starts with each data point being a cluster and in each iteration merges the two most similar clusters according to the linkage criterion until there is only one cluster.
-There are many cluster linkage criteria, each of them having its own advantages and disadvantages. 
-The most common linkage is the \emph{centroid linkage} which computes the distance between the clusters centroids (the mean points).
+It is an iterative method that starts with each data point being a cluster and, in each iteration, merges the two most similar clusters according to the linkage criterion until there is only one cluster.
+There are many cluster linkage criteria to choose from, each with advantages and disadvantages. 
+The most common linkage is the \emph{centroid linkage}, which computes the distance between the clusters centroids (the mean points).
 In analyzing single-cell cytometry data, hierarchical clustering with the Mahalanobis linkage has been shown to be the most suitable method.
 
 Mahalanobis linkage uses \emph{Mahalanobis distance} to measure the similarity between clusters:
 \begin{defn}[Mahalanobis distance]
-	Suppose a probability distribution $C$ on $\R^d$ with mean $\bar{C} \in \R^d$ and a convariance matrix $\cov(C)$. If the matrix $\cov(C)$ is regular, we define the \emph{Mahalanobis distance} between $u \in \R^d$ and $C$ as
-	\begin{equation}
-	d_\text{Maha}(u,C) = \sqrt{(u-\bar{C})^T\cov(C)^{-1}(u-\bar{C})}.
-	\end{equation}\label{eq01:maha}
+    Suppose a probability distribution $C$ on $\R^d$ with mean $\bar{C} \in \R^d$ and a convariance matrix $\cov(C)$. If the matrix $\cov(C)$ is regular, we define the \emph{Mahalanobis distance} between $u \in \R^d$ and $C$ as
+    \begin{equation}
+    d_\text{Maha}(u,C) = \sqrt{(u-\bar{C})^T\cov(C)^{-1}(u-\bar{C})}.
+    \end{equation}\label{eq01:maha}
 \end{defn}
 
 If we generalize a centroid of a cluster to a probability distribution, Definition~\ref{eq01:maha} can be used to define the Mahalanobis distance between a point and a cluster. To extend the definition to a distance between two clusters, we use the following equation:
@@ -26,44 +26,37 @@ If we generalize a centroid of a cluster to a probability distribution, Definiti
     \delta_\text{Maha}(P,Q) = \frac{d_\text{Maha}(\bar{P},Q) + d_\text{Maha}(\bar{Q},P)}{2}
 \end{equation}\label{eq01:maha_linkage}
 
-To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipsis are alongside rather than in a prolongation of one another [TODO] (see Figure~\ref{fig:ellipses}). 
-Only when the objects of a cluster form a spherical shape, this measure of dissimilarity is proportional to the euclidean distance with a corresponding linkage.
-This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity materialized in the computation of covariance matrix, matrix inverse and vector-matrix-vector multiplication in each distance evaluation.
+To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipses are alongside rather than in a prolongation of one another [TODO] (see Figure~\ref{fig:ellipses}). 
+Only when the objects of a cluster form a spherical shape, this dissimilairity measure is proportional to the Euclidean distance with a corresponding linkage.
+This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity materialized in the computation of covariance matrix, matrix inverse, and vector-matrix-vector multiplication in each distance evaluation.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.6\textwidth]{img/ellipses.pdf}
-    \caption{Two pairs of clusters with different simillarities according to Mahalanobis distance}
+    \caption{Two pairs of clusters with different similarities according to Mahalanobis distance}
     \label{fig:ellipses}
 \end{figure}
 
-% where P is the set mean and cov(P) is the covariance matrix of the set P (if interpreted as a `distribution of points').
-% The distance has a specific property which can be intuitevely interpreted as a Euclidean distance to a center of a set which `accounts' the shape and size of the cluster. In other words, the Mahalanobis distance is a Euclidean distance in a transformed space, such that the covariance matrix of a cluster is the identity matrix.
-
-% In the Mahalanobis linkage, the distance between two clusters is defined as the average of Mahalanobis distances between their means and each other.
-% This allows for a very natural formation of clusters in biological data. However, the benefits come with the increase in complexity. 
-% To compute the Mahalanobis distance, we need to compute the mean of a cluster and an inverse of its covariance matrix and finally do an actual distance computation which are two matrix multiplications.
-
 \subsection{Algorithm complexity and the implementation}
 
-Hierarchical Clustering (HC) is a well known problem and there are many algorithms which effectively solve it. Roughly, they can be divided into categories according to the data structures they employ [TODO]:
+Hierarchical Clustering (HC) is a well-known problem, and there are many algorithms that effectively solve it. Roughly, they can be divided into categories according to the data structures they employ [TODO]:
 \begin{itemize}
     \item HC with a dissimilarity matrix --- the most straightforward approach; the dissimilarity matrix stores the distances between all pairs of clusters. This approach has a cubic time complexity and quadratic memory complexity.
     \item HC with a nearest neighbor array --- each cluster stores the index of its nearest neighbor. This approach trades a linear memory complexity for an asymptotic time complexity of $\mathcal{O}(d \cdot n^3)$.
     \item HC with an array of priority queues --- a more sophisticated solution, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$.
 \end{itemize}
 
-C application \texttt{mhclust}, the original implementation of the Mahalanobis HC, uses the dissimilarity matrix. This approach is simple and allows for a straightforward implementation. However, the empirical data reveal the biggest limiting factor in the quadratic memory complexity. The Mahalanbois distance adds a multiplicative factor in $\mathcal{O}(d^2)$ to the memory complexity, so usually the machine runs out of memory before the execution time reaches unreasonalbe digits.
+C application \texttt{mhclust}, the original implementation of the Mahalanobis HC, uses the dissimilarity matrix. This approach is simple and allows for a straightforward implementation. However, the empirical data reveal the most significant limiting factor in the quadratic memory complexity. The Mahalanbois distance adds a multiplicative factor in $\mathcal{O}(d^2)$ to the memory complexity, so usually, the machine runs out of memory before the execution time reaches unreasonable limits.
 
-As a solution to this limitation, we can assume \emph{in-place} variant of the HC with dissimilarity matrix, which discards the whole matrix and chooses the closest cluster pair by computing the distances in place. This increases the asymptotic time complexity to $\mathcal{O}(d \cdot n^3)$ assuming the Euclidean distance with centroid linkage.
+As a solution to this limitation, we can assume \emph{in-place} variant of the HC with dissimilarity matrix, which discards the whole matrix and chooses the closest cluster pair by computing the distances ad-hoc. This increases the asymptotic time complexity to $\mathcal{O}(d \cdot n^3)$ assuming the Euclidean distance with centroid linkage.
 
-In our work, we chose to use the nearest neighbor array approach because we can get on average less distance computations per iteration while keeping the memory complexity linear. Notably, the algorithm complexity per iteration is quadratic only in the worst case, when each cluster's neighbor needs to be reevaluated. This case would correspond to always merging such cluster pair that all the other clusters are neighboring with. In practice, this is not the case and the empirical data show that the number of neighbors to reevaluate is typically in the range of 10 to 100 for tested datasets with at most 1M of points.
+Our work used the nearest neighbor array approach to achieve fewer distance computations per iteration on average while keeping the memory complexity linear. Notably, the algorithm complexity per iteration is quadratic only in the worst case, when each cluster's neighbor needs to be reevaluated. This case would correspond to constantly merging such cluster pairs that all the other clusters are neighboring. In practice, this is an atypical case, and the empirical data show that the number of neighbors to reevaluate is generally in the range of 10 to 100 for tested datasets with at most 1M of points.
 
-Apart from the complex distance computation, the Mahalanobis HC suffers from the unbalanced nature of the algorithm. In the first merging iterations, the runtime is dominated by the distance computation and the update of the data structure. But when the number of clusters decreases, the bottleneck becomes the covariance matrix computation of a merged cluster (with a time complexity of $\mathcal{O}(d^2 \cdot n)$). We used \emph{streams}, a CUDA abstraction for task parallelism on GPUs, to overlap the computation of the covariance matrix with the data structure update to keep the GPU utilization high.
+Apart from the complex distance computation, the Mahalanobis HC suffers from the unbalanced nature of the algorithm. In the first iterations, the runtime is dominated by the distance computation in the data structure update. However, when the number of clusters decreases, the bottleneck becomes the covariance matrix computation of a merged cluster (with a time complexity of $\mathcal{O}(d^2 \cdot n)$). We used \emph{streams}, a CUDA abstraction for task parallelism on GPUs, to overlap the covariance matrix computation with the data structure update to keep GPU utilization high.
 
 \subsection{Future work}
 
-The Mahalanobis HC is a valuable method for analyzing cytometry data. However, since our publication of the optimized algorithms algorithm, there have been new additions to the GPU CUDA framework, which could be used to further improve the performance of the algorithm. Specifically, the whole Mahalanobis distance could be computed as a single \emph{Tensor} operation, drastically improving the throughput of the application. Another promising optimization would be to use \emph{CUDA Graph} to reduce the kernel launch overhead.
+The Mahalanobis HC is a valuable method for analyzing cytometry data. However, since we published the optimized algorithm, there have been new additions to the GPU CUDA framework, which could be used to improve the performance of the algorithm further. Specifically, the whole Mahalanobis distance could be computed as a single \emph{Tensor} operation, drastically improving the application throughput. Another promising optimization would be to use \emph{CUDA Graph} to reduce the kernel launch overhead.
 
 
 \section{Neighborhood-based dimensionality reduction}
