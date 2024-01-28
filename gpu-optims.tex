@@ -55,31 +55,16 @@ Hierarchical Clustering (HC) is a well known problem and there are many algorith
 
 C application \texttt{mhclust}, the original implementation of the Mahalanobis HC, uses the dissimilarity matrix. This approach is simple and allows for a straightforward implementation. However, the empirical data reveal the biggest limiting factor in the quadratic memory complexity. The Mahalanbois distance adds a multiplicative factor in $\mathcal{O}(d^2)$ to the memory complexity, so usually the machine runs out of memory before the execution time reaches unreasonalbe digits.
 
-As a solution to this limitation, we can assume \emph{in-place} variant of the HC with dissimilarity matrix, which does not hold the whole matrix in memory but chooses the closest cluster pair by computing the distances in place. This increases the asymptotic time complexity to $\mathcal{O}(d \cdot n^3)$ assuming Euclidean distance with centroid linkage.
+As a solution to this limitation, we can assume \emph{in-place} variant of the HC with dissimilarity matrix, which discards the whole matrix and chooses the closest cluster pair by computing the distances in place. This increases the asymptotic time complexity to $\mathcal{O}(d \cdot n^3)$ assuming the Euclidean distance with centroid linkage.
 
 In our work, we chose to use the nearest neighbor array approach because we can get on average less distance computations per iteration while keeping the memory complexity linear. Notably, the algorithm complexity per iteration is quadratic only in the worst case, when each cluster's neighbor needs to be reevaluated. This case would correspond to always merging such cluster pair that all the other clusters are neighboring with. In practice, this is not the case and the empirical data show that the number of neighbors to reevaluate is typically in the range of 10 to 100 for tested datasets with at most 1M of points.
 
-We also discovered the unbalanced nature of the algorithm. Notably, during the first iterations, the algorithm runtime is dominated by the data structure update. In the final iterations when the number of clusters is low and hence the number of invalidated neighbors. This part is superseded by the covariance matrix computation with linear time complexity with respect to the size of cluster. 
+Apart from the complex distance computation, the Mahalanobis HC suffers from the unbalanced nature of the algorithm. In the first merging iterations, the runtime is dominated by the distance computation and the update of the data structure. But when the number of clusters decreases, the bottleneck becomes the covariance matrix computation of a merged cluster (with a time complexity of $\mathcal{O}(d^2 \cdot n)$). We used \emph{streams}, a CUDA abstraction for task parallelism on GPUs, to overlap the computation of the covariance matrix with the data structure update to keep the GPU utilization high.
 
-- maybe better start with DM and PQ - describe the costly parts of the loop with DM and show optimizations with PQ
-- then, start with memory limitations in the original impl
-- then, propose in-place distance computation and optimization of the nearest neighbor arrays and neighbor buffering
-- then, show the results ? - how bigger the data can be assuming X GB of memory
+\subsection{Future work}
 
-- future work: tensor cores, cuda graph
+The Mahalanobis HC is a valuable method for analyzing cytometry data. However, since our publication of the optimized algorithms algorithm, there have been new additions to the GPU CUDA framework, which could be used to further improve the performance of the algorithm. Specifically, the whole Mahalanobis distance could be computed as a single \emph{Tensor} operation, drastically improving the throughput of the application. Another promising optimization would be to use \emph{CUDA Graph} to reduce the kernel launch overhead.
 
-
-\subsection{Prior solution and its limitations}
-
-High computational complexity limited the original implementation of the algorithm to a maximum thousands of dataset points. To overcome this limitation, the authors developed the method of apriori clusters to reduce the dataset size for the sake of the accuracy. The apriori clustering is a preprocessing step in which small clusters are created using Euclidean distance. Then these clusters are inputed to the main algorithm. This allowed to push the limits of the original implementation in orders of magnitude, but at a cost of less accurate results.
-
-The memory complexity is also a limiting factor. The original implementation uses a dissimilarity matrix to store the distances between the clusters. Although this data structures saves computation time (in distance evaluation), it has quadratic memory complexity. This limits the size of the dataset to a few thousands of points.
-
-\subsection{Optimized solution}
-
-In our solution, we use a nearest neighbor array instead of the dissimilarity matrix. This allows us to reduce the memory complexity to linear. The nearest neighbor array is a one-dimensional array of size $n$ where $n$ is the number of clusters. Each element of the array contains the index of the nearest neighbor of the corresponding cluster. Although it requires more updates in the worst case, we used a simple optimization to buffer multiple nearest neighbors for each cluster.
-
-The other challenge was that the complete solution was composed of multiple kernels of different duration. The computation of covariance matrix is fast at the beginning of the algorithm (because the clusters are small) while nearest neighbor list updates are slow (because there are more potential neighbors to update). Thankfully, these two kernels are independent and can be executed in parallel. We used CUDA streams to overlap the execution of these two kernels and thus keeping the high utilization of the GPU.
 
 \section{Neighborhood-based dimensionality reduction}
 
