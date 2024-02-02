@@ -61,19 +61,19 @@ The Mahalanobis HC is a valuable method for analyzing cytometry data. However, s
 
 \section{Neighborhood-based dimensionality reduction}
 
-Another aproach to analysis of multidimensional point-like cloud datasets is to reduce the dimensionality of the data to a lower (human-readable) dimension while preserving the local structure of the data. This approach is used in many areas of life sciences, such as microscopy imaging, population biology and others. The most popular methods for dimensionality reduction are t-SNE and UMAP. Both these methods are nonlinear neighborhood embeddings and use a stochastic approach to find the optimal mapping. However, their applicability reaches a limit when increasing the scale or requiring real-time processing.
+Another approach to the analysis of multidimensional point-like cloud datasets is to reduce the dimensionality of the data to a lower (human-readable) dimension while preserving the local structure of the data. This approach is used in many areas of life sciences, such as microscopy imaging, population biology, and others. The most popular methods for dimensionality reduction are t-SNE and UMAP. Both these methods are nonlinear neighborhood embeddings and use a stochastic approach to find the optimal mapping. However, their applicability reaches a limit when increasing the scale or requiring real-time processing.
 
-The EmbedSOM algorithm tries to tackle this limitation. It is based on self-organizing maps (SOM) and uses a landmarks-based approach to reduce the computational complexity. Instead of computing all pairwise distances and stochastically optimizing the low-dimensional mapping, EmbedSOM uses a small set of landmarks to approximate the mapping. This allows for a over a magnitude better performance while retaining the reasonable accuracy of the results. In our works, we followed upon the EmbedSOM algorithm and implemented it on GPUs to achieve real-time processing of large datasets allowing for a semi-supervised dataset analysis.
+The EmbedSOM algorithm tries to tackle this limitation. It is based on self-organizing maps and uses a landmarks-based approach to reduce the computational complexity. Instead of computing all pairwise distances and stochastically optimizing the low-dimensional mapping, EmbedSOM uses a small set of landmarks to approximate the mapping. This allows for over a magnitude better performance while retaining the reasonable accuracy of the results. In our works, we followed up on the EmbedSOM algorithm and implemented it on GPUs to achieve real-time processing of large datasets, allowing for a semi-supervised dataset analysis.
 
 \subsection{Backgound}
 
-Algorithm~\ref{alg01:esom} highlights the overview of EmbedSOM algorithm. It assumes a set of $n$ high-dimensional (denoted with $d$) points $X \in \R^{n \times d}$, a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional ($2$ for brevity) landmarks $l \in \R^{g \times 2}$. FOr each high-dimensional point, it finds a low-dimensional variant by selecting $k < g$ nearest landmarks, assigning them scores, and computing the optimal low-dimensional mapping according to the scores. The optimal mapping is computed by minimizing the sum of the differences between the distances of the high-dimensional point to the landmarks and the distances of the low-dimensional point to the landmarks. Because of mapping nature, the minimization problem can be reduced to a linear system of equations with 2 variables.
+Algorithm~\ref{alg01:esom} highlights the overview of EmbedSOM algorithm. It assumes a set of $n$ high-dimensional (denoted with $d$) points $X \in \R^{n \times d}$, a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional ($2$ for brevity) landmarks $l \in \R^{g \times 2}$. For each high-dimensional point, it finds a low-dimensional variant by selecting $k < g$ nearest landmarks, assigning them scores, and computing the optimal low-dimensional mapping according to the scores. The optimal mapping is computed by minimizing the sum of the differences between the distances of the high-dimensional point to the landmarks and the distances of the low-dimensional point to the landmarks. Because of the mapping nature, the minimization problem can be reduced to a linear system of equations with two variables.
 
 \begin{algorithm}[t]
-	\caption{EmbedSOM}
-	\label{alg01:esom}
-	\begin{algorithmic}[1]
-		\Procedure{EmbedSOM}{$X\in\R^{n\times d}$, $L\in\R^{g\times d}$, $l\in\R^{g\times 2}$, $k\in\N$}
+    \caption{EmbedSOM}
+    \label{alg01:esom}
+    \begin{algorithmic}[1]
+        \Procedure{EmbedSOM}{$X\in\R^{n\times d}$, $L\in\R^{g\times d}$, $l\in\R^{g\times 2}$, $k\in\N$}
         \For {$i \in \{1\dots n\}$} \Comment{For each high-dimensional point}
             \State Find $k$ nearest landmarks from $L$
             \State Score the $k$ nearest landmarks according to the distance to $X_i$ with $s_1, \dots, s_k$
@@ -82,27 +82,25 @@ Algorithm~\ref{alg01:esom} highlights the overview of EmbedSOM algorithm. It ass
             \EndFor
             \State Find $x_i$, such that $\sum_{u, v} s_u \cdot s_v \cdot (D_{uv}(X_i) - d_{uv}(x_i))$ is minimized
         \EndFor
-		\EndProcedure
-	\end{algorithmic}
+        \EndProcedure
+    \end{algorithmic}
 \end{algorithm}
 
-Let us divide the algorithm into two digestable parts: The first part being the first line of the algorithm which is basically the $k$NN search and the remainder of the algorithm as the second part, the \emph{projection}. This allows us to sketch the time complexities, which roughly follow $\mathcal{O}(n\cdot d \cdot g \cdot \log k)$ for $k$NN and $\mathcal{O}(n\cdot d \cdot k^2)$ for the projection.
+Let us divide the algorithm into two well-separated parts: The first part shall be the algorithm's first line, also known as the \emph{$k$NN search}, and the remainder of the algorithm for the second part, \emph{the projection}. Considering such division, the time complexities roughly follow $\mathcal{O}(n\cdot d \cdot g \cdot \log k)$ for $k$NN and $\mathcal{O}(n\cdot d \cdot k^2)$ for the projection.
 
 \subsection{Implementation}
 
-The main challenge of both steps is fighting the \emph{arithmetic intensity}. GPUs are very prone to beeing memory bound; for example, Tesla V100 has ops per byte ratio of $16$ \texttt{FLOPS/B} for single precision arithmetics (and around $140$ \texttt{FLOPS/B} when we also account the Tensor cores). Therefore, in order to enable the GPU to perform at its peak, we generally need to design the implementation such that:
+The main challenge of both steps is fighting the \emph{arithmetic intensity}. GPUs are very prone to being memory bound; for the sake of context, Tesla V100 has ops per byte ratio of $16$ \texttt{FLOPS/B} and around $140$ \texttt{FLOPS/B} when we also account for the Tensor cores (assuming single precision arithmetics). Therefore, in order to enable the GPU to perform at its peak, we generally need to design the implementation such that:
 \begin{itemize}
-    \item the data are cached in a smart way and reused as much possible, or
-    \item increase the GPU occupancy, such that the latencies of retrieving the data are hidden by the scheduler.
+    \item the data are cached in a smart way and reused as much as possible, or
+    \item we increase the GPU occupancy, such that the latencies of data retrieval are hidden by the scheduler.
 \end{itemize}
 
-We experimented with both approaches in our implementation. $k$NN algorithm is very friendly for data sharing, since the data for one point from $X$ can be shared among multiple landmarks to compute the distances (or vice-versa). The best arithmetic intensity is achieved, when both the data and the landmarks are cached. We complemented this variant with the variant which uses bitonic sort for top-$k$ selection, which promotes high occupancy.
+We experimented with both approaches in our implementation. $k$NN algorithm is suited for data sharing since the data for one point from $X$ can be shared among multiple landmarks to compute the distances (or vice-versa). The best arithmetic intensity is achieved when both the data and the landmarks are cached. We complemented this variant with the kernel that uses bitonic sort for top-$k$ selection, which promotes high occupancy.
 
-The projection step is especially challenging because each point has potentially different set of nearest landmarks resulting in a lower potential for data sharing. Even when caching all the landmarks in the shared GPU memory, the arithmetic intensity is not sufficient (this is exacrebated by a low value for $k$ in general EmbedSOM use). To remedy this, we experimented with more advanced GPU techniques to increase the arithmetic intensity. We utilized the \emph{vector load instructions}, which allows for loading multiple floating point numbers at once. This improves the memory bandwidth and reduces the number of issued instructions for the sake of lower parallelism. We combined this with the \emph{register caching}, a second caching level, which allowed us to compute multiple projections per one data transfer from the shared memory. 
+The projection step is especially challenging because each point has a potentially different set of nearest landmarks, limiting the data-sharing possibilities. This is exacerbated even more by low parameter values of $k$ in a general EmbedSOM use. To remedy this, we experimented with more advanced GPU techniques to increase the arithmetic intensity. We utilized \emph{vector load instructions}, which fetch multiple floating point numbers from the memory. This improves the memory bandwidth and reduces the number of issued instructions for the sake of lower parallelism. We combined this with the \emph{register caching}, a second caching level, which allowed us to compute multiple projections per one data transfer from the shared memory. 
 
-After the thorough benchmarking process, we selected the most performing variants of both steps and combined it into a performant implementation of the EmbedSOM algorithm. The further contributions in this topic include the works of a collaborating master student, who integrated the optimized code into the graphicall application \emph{BlosSOM} [TODO], and reported a responsive frame-rate at analyzing big datasets, assesing this method of dimensionality reduction as a competitive tool for semi-supervised dataset analysis.
-
-
+After the thorough benchmarking process, we selected the most performing variants of both steps and combined them into a complete implementation of the EmbedSOM algorithm. Further contributions in this topic include the works of a collaborating master student, who integrated the optimized code into the graphical application \emph{BlosSOM} [TODO], and reported a responsive frame rate at analyzing big datasets, assessing this method of dimensionality reduction as a competitive tool for semi-supervised dataset analysis.
 
 \section{Cross-correlation}
 
