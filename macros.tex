@@ -3,24 +3,6 @@
 
 %%% Minor tweaks of style
 
-% These macros employ a little dirty trick to convince LaTeX to typeset
-% chapter headings sanely, without lots of empty space above them.
-% Feel free to ignore.
-\makeatletter
-\def\@makechapterhead#1{
-  {\parindent \z@ \raggedright \normalfont
-   \Huge\bfseries \thechapter. #1
-   \par\nobreak
-   \vskip 20\p@
-}}
-\def\@makeschapterhead#1{
-  {\parindent \z@ \raggedright \normalfont
-   \Huge\bfseries #1
-   \par\nobreak
-   \vskip 20\p@
-}}
-\makeatother
-
 % This macro defines a chapter, which is not numbered, but is included
 % in the table of contents.
 \def\chapwithtoc#1{
@@ -28,8 +10,19 @@
 \addcontentsline{toc}{chapter}{#1}
 }
 
+\def\secwithtoc#1{
+\section*{#1}
+\addcontentsline{toc}{section}{#1}
+}
+
 % Draw black "slugs" whenever a line overflows, so that we can spot it easily.
-\overfullrule=1mm
+\overfullrule=5mm
+\emergencystretch=1cm
+
+\AtBeginDocument{
+\hyphenation{SOM-Hun-ter}
+\hyphenation{Wi-de-spread}
+}
 
 %%% Macros for definitions, theorems, claims, examples, ... (requires amsthm package)
 
@@ -40,11 +33,11 @@
 
 \theoremstyle{plain}
 \newtheorem{defn}{Definition}
+\newtheorem{problem}{Problem}
 
 \theoremstyle{remark}
 \newtheorem*{cor}{Corollary}
 \newtheorem*{rem}{Remark}
-\newtheorem*{example}{Example}
 
 %%% An environment for proofs
 
@@ -56,46 +49,99 @@
 \rightline{$\qedsymbol$}
 }
 
-%%% An environment for typesetting of program code and input/output
-%%% of programs. (Requires the fancyvrb package -- fancy verbatim.)
-
-\DefineVerbatimEnvironment{code}{Verbatim}{fontsize=\small, frame=single}
-
 %%% The field of all real and natural numbers
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
+\newcommand{\Asymp}[1]{\ensuremath{\mathcal{O}\left(#1\right)}}
 
 %%% Useful operators for statistics and probability
 \DeclareMathOperator{\pr}{\textsf{P}}
 \DeclareMathOperator{\E}{\textsf{E}\,}
 \DeclareMathOperator{\var}{\textrm{var}}
 \DeclareMathOperator{\sd}{\textrm{sd}}
+\DeclareMathOperator{\subs}{\textsc{Sub}}
 
-%%% Transposition of a vector/matrix
-\newcommand{\T}[1]{#1^\top}
+% contributions
+\newcounter{contribution}
+\def\contribution#1{
+\refstepcounter{contribution}
+\chapter*{Contribution \arabic{contribution}\\#1}
+\addcontentsline{toc}{chapter}{Contribution \arabic{contribution}\\#1}
+}
 
-%%% Various math goodies
-\newcommand{\goto}{\rightarrow}
-\newcommand{\gotop}{\stackrel{P}{\longrightarrow}}
-\newcommand{\maon}[1]{o(n^{#1})}
-\newcommand{\abs}[1]{\left|{#1}\right|}
-\newcommand{\dint}{\int_0^\tau\!\!\int_0^\tau}
-\newcommand{\isqr}[1]{\frac{1}{\sqrt{#1}}}
+\crefname{contribution}{contribution}{contributions}
+\Crefname{contribution}{Contribution}{Contributions}
 
-%%% Various table goodies
-\newcommand{\pulrad}[1]{\raisebox{1.5ex}[0pt]{#1}}
-\newcommand{\mc}[1]{\multicolumn{1}{c}{#1}}
+\setlength{\marginparpush}{0pt}
+\setlength{\marginparsep}{2em}
+
+\newcommand{\contribmark}[1]{%
+\hyperref[#1]{\begin{tikzpicture}[ultra thick, font=\sf\bfseries]
+\node[regular polygon, regular polygon sides=3, rounded corners=0.3ex, inner sep=.3ex,draw] (ll) {\ref*{#1}};
+\end{tikzpicture}}}
+\newcommand{\margincontrib}[1]{\marginnote{\contribmark{#1}}}
+
+\newcommand{\publishedas}[1]{\begin{description}\item[Published as]\begin{refsection}\fullcite{#1}\end{refsection}\end{description}}
+
+% ONLINE VERSION without the manuscripts
+\newif\ifonlineversion
+\onlineversiontrue
+%\onlineversionfalse
+\newcommand\onlineomit[1]{\ifonlineversion\vfill\begin{center}\fbox{\parbox{16.5em}{\footnotesize A re-printed manuscript that would appear here is omitted in the electronic version of the thesis.}}\end{center}\vfill\else#1\fi}
+
+% publication contributions
+\def\contF{\begin{tikzpicture}\fill circle(0.666ex);\end{tikzpicture}}
+\def\contP{\begin{tikzpicture}\begin{scope}[rotate=90]\clip circle(0.666ex);\fill (-0.666ex,-0.666ex) rectangle(-0.1ex,0.666ex);\end{scope}\draw circle(0.666ex);\end{tikzpicture}}
+\def\contN{\begin{tikzpicture}\draw[densely dotted] circle(0.666ex);\end{tikzpicture}}
+
+% chemfig style
+\renewcommand*\printatom[1]{\ensuremath{\mathsf{#1}}}
+\setchemfig{atom sep=4ex, angle increment=30}
+\catcode`\_=11
+\tikzset{
+	ddbond/.style args={#1}{
+		draw=none,
+		decoration={%
+			markings,
+			mark=at position 0 with {
+				\coordinate (CF@startdeloc) at (0,\dimexpr#1\CF_doublesep/2)
+				coordinate (CF@startaxis) at (0,\dimexpr-#1\CF_doublesep/2);
+			},
+			mark=at position 1 with {
+				\coordinate (CF@enddeloc) at (0,\dimexpr#1\CF_doublesep/2)
+				coordinate (CF@endaxis) at (0,\dimexpr-#1\CF_doublesep/2);
+				\draw[dash pattern=on 2pt off 1.5pt] (CF@startdeloc)--(CF@enddeloc);
+				\draw (CF@startaxis)--(CF@endaxis);
+			}
+		},
+		postaction={decorate}
+	}
+}
+\catcode`\_=8
+
+% latexdiff preamble commands:
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{green!50!black}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+
 
 % Mahalanobis
 \DeclareMathOperator{\cov}{\textbf{cov}}
 \DeclareMathOperator{\mean}{mean}
 \DeclareMathOperator{\argmin}{argmin}
-
-% noarr
-\renewcommand{\labelitemi}{$\bullet$}
-\newcommand{\noarr}{noarr}
-\newcommand{\Noarr}{Noarr}
-
-% embedsom
-\def\Alg#1{{\bfseries\scshape #1}}
-\def\alg#1{{\scshape #1}}

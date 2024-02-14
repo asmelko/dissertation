@@ -1,85 +1,65 @@
 %%% The main file. It contains definitions of basic parameters and includes all other parts.
 
-%% Settings for single-side (simplex) printing
-% Margins: left 40mm, right 25mm, top and bottom 25mm
-% (but beware, LaTeX adds 1in implicitly)
-\documentclass[12pt,a4paper]{report}
-\setlength\textwidth{145mm}
-\setlength\textheight{247mm}
-\setlength\oddsidemargin{15mm}
-\setlength\evensidemargin{15mm}
-\setlength\topmargin{0mm}
-\setlength\headsep{0mm}
-\setlength\headheight{0mm}
-% \openright makes the following text appear on a right-hand page
-\let\openright=\clearpage
-
-%% Settings for two-sided (duplex) printing
-% \documentclass[12pt,a4paper,twoside,openright]{report}
-% \setlength\textwidth{145mm}
-% \setlength\textheight{247mm}
-% \setlength\oddsidemargin{14.2mm}
-% \setlength\evensidemargin{0mm}
-% \setlength\topmargin{0mm}
-% \setlength\headsep{0mm}
-% \setlength\headheight{0mm}
-% \let\openright=\cleardoublepage
+\documentclass[12pt,twoside,openright,a4paper]{report}
+\let\openright=\cleardoublepage
 
 %% Generate PDF/A-2u
 \usepackage[a-2u]{pdfx}
 
-%% Character encoding: usually latin2, cp1250 or utf8:
-\usepackage[utf8]{inputenc}
+\usepackage{fontspec}
+\setmainfont{Libertinus Serif}
+\setsansfont{Libertinus Sans}
+\newfontfamily\figfamily{IBM Plex Sans Extra Light}[BoldFont={IBM Plex Sans Medium},Scale=.86]
+%\newfontfamily\figfamily{Roboto Thin}[BoldFont={Roboto Bold}]
+%\setmonofont{TeX Gyre Cursor}[Ligatures=CommonOff]
+\setmonofont{IBM Plex Mono Light}[BoldFont={IBM Plex Mono Semibold}, Ligatures=CommonOff,Scale=0.86]
+%\setmainfont{Merriweather Light}[BoldFont={Merriweather Bold},BoldItalicFont={Merriweather Bold Italic},Scale=.8]
+%\setsansfont{Merriweather Sans Light}[BoldFont={Merriweather Sans Bold},BoldItalicFont={Merriweather Sans Bold Italic},Scale=.8]
 
-%% Prefer Latin Modern fonts
-\usepackage{lmodern}
 
-%% Further useful packages (included in most LaTeX distributions)
-\usepackage{amsmath}        % extensions for typesetting of math
-\usepackage{amsfonts}       % math fonts
-\usepackage{amsthm}         % theorems, definitions, etc.
-\usepackage{bbding}         % various symbols (squares, asterisks, scissors, ...)
-\usepackage{bm}             % boldface symbols (\bm)
-\usepackage{graphicx}       % embedding of pictures
-\usepackage{fancyvrb}       % improved verbatim environment
-\usepackage{natbib}         % citation style AUTHOR (YEAR), or AUTHOR [NUMBER]
-\usepackage[nottoc]{tocbibind} % makes sure that bibliography and the lists
-			    % of figures/tables are included in the table
-			    % of contents
-\usepackage{dcolumn}        % improved alignment of table columns
-\usepackage{booktabs}       % improved horizontal lines in tables
-\usepackage{paralist}       % improved enumerate and itemize
-\usepackage{xcolor}         % typesetting in color
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{unicode-math}
+\usepackage{pdfpages}
+\usepackage{graphicx}
+\usepackage{marginnote}
+\usepackage{ifoddpage}
+\usepackage[all]{nowidow}
+\usepackage[shortlabels]{enumitem}
 
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-
-% noarr
-\usepackage{subcaption}
-\usepackage{minted}
-\usemintedstyle{vs}
-\definecolor{LightGray}{gray}{0.96}
-\newmintedfile[inputmintedcpp]{c++}{bgcolor=LightGray,tabsize=2,fontsize=\scriptsize,linenos, breaklines,escapeinside=\#\#}
 \usepackage{listings}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
-\lstset{basicstyle=\scriptsize\ttfamily,%
-    language=c++,%
-    keywordstyle=\color{blue},%
-    stringstyle=\color{magenta},%
-    commentstyle=\color{green!50!black},%
-    showstringspaces=false,%
-    rulecolor=\color{lightgray},%
-    backgroundcolor=\color{backcolour},   
-    numberstyle=\tiny\color{codegray},
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    tabsize=2,
-    otherkeywords={size_t},
-}
+
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{caption}
+\DeclareCaptionFont{fig}{\figfamily}
+\captionsetup{font={footnotesize,fig},labelfont=bf,labelsep=quad}
+\DeclareCaptionStyle{ruled}{font={footnotesize,fig},labelfont=bf,labelsep=quad,strut=off}
+
+\usepackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+%\usepackage{yfonts}
+%\renewcommand{\familydefault}{\frakdefault}
+\usepackage[natbib,style=ext-numeric-comp,sorting=none,articlein=false,maxnames=6,maxcitenames=1]{biblatex}
+\addbibresource{bibliography.bib}
+\addbibresource{myrefs.bib}
+%\DeclareNameAlias{sortname}{family-given}
+%\DeclareNameAlias{default}{family-given}
+\DeclareFieldFormat*{volume}{\mkbibbold{#1}}
+\DeclareDelimFormat{namelabeldelim}{~}
+\renewcommand*{\bibfont}{\small}
+
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,decorations.markings,positioning,calc,arrows.meta,matrix,fit,decorations.pathreplacing}
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+
+\usepackage{chemfig}
+
+\newcommand{\xxx}[1]{\textcolor{red}{#1}}
 
 
 %%% Basic information on the thesis
@@ -127,87 +107,30 @@ Abstract.
 {key} {words}
 }
 
-%% The hyperref package for clickable links in PDF and also for storing
-%% metadata to PDF (including the table of contents).
-%% Most settings are pre-set by the pdfx package.
 \hypersetup{unicode}
 \hypersetup{breaklinks=true}
+\hypersetup{hidelinks}
 
-% Definitions of macros (see description inside)
-\input{macros}
+\usepackage[capitalize]{cleveref}
 
-% Title page and various mandatory informational pages
+\include{macros}
+
 \begin{document}
 \include{title}
-
-%%% A page with automatically generated table of contents of the doctoral thesis
-
 \tableofcontents
-
 \include{preface}
+\include{publications}
 
-\part{Commentary}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\part{Commentary}\label{part:comments}
 \include{introduction}
-\include{gpu-intro}
 \include{gpu-optims}
-
-
-
-
-
-
-
-\part{Contributions}
-
-% \include{Mahalanobis/paper}
-% \include{noarr/main}
-% \include{crosscorr/src/manuscript}
-% \include{embedsom/paper}
-
-\chapter{GPU-accelerated Mahalanobis-average Hierarchical Clustering Analysis}
-\chapter{Astute Approach to Handling Memory Layouts of Regular Data Structures}
-\chapter{Efficient GPU-accelerated Parallel Cross-correlation}
-\chapter{GPU-acceleration of neighborhood-based dimensionality reduction algorithm EmbedSOM}
-
-
-\chapter{Pure C++ Approach to Optimized Parallel~Traversal of Regular Data~Structures}
-
-\chapter{MaBoSS for HPC environments: Implementations of the continuous time Boolean model simulator for large CPU clusters and GPU accelerators}
-
-\include{epilog}
-
-%%% Bibliography
+\include{outro}
+\part{Contributions}\label{part:contribs}
+\include{contributions}
 \include{bibliography}
-
-%%% Figures used in the thesis (consider if this is needed)
-\listoffigures
-
-%%% Tables used in the thesis (consider if this is needed)
-%%% In mathematical theses, it could be better to move the list of tables to the beginning of the thesis.
-\listoftables
-
-%%% Abbreviations used in the thesis, if any, including their explanation
-%%% In mathematical theses, it could be better to move the list of abbreviations to the beginning of the thesis.
-\chapwithtoc{List of Abbreviations}
-
-%%% Doctoral theses must contain a list of author's publications
-\chapwithtoc{List of publications}
-
-%%% Attachments to the doctoral thesis, if any. Each attachment must be
-%%% referred to at least once from the text of the thesis. Attachments
-%%% are numbered.
-%%%
-%%% The printed version should preferably contain attachments, which can be
-%%% read (additional tables and charts, supplementary text, examples of
-%%% program output, etc.). The electronic version is more suited for attachments
-%%% which will likely be used in an electronic form rather than read (program
-%%% source code, data files, interactive charts, etc.). Electronic attachments
-%%% should be uploaded to SIS and optionally also included in the thesis on a~CD/DVD.
-%%% Allowed file formats are specified in provision of the rector no. 72/2017.
-\appendix
-\chapter{Attachments}
-
-\section{First Attachment}
 
 \openright
 \end{document}
