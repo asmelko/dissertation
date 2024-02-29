@@ -37,6 +37,41 @@ This allows for a very natural formation of clusters in biological data. However
     \label{fig:ellipses}
 \end{figure}
 
+% We analyzed datasets with n = 10^4 events as the distance of data points requires O(n2) space in memory, and therefore, it becomes impractical (or even impossible) to analyze bigger datasets on current desktop computers.
+
+% IN childhood acute lymphoblastic leukemia (ALL), response to therapy as measured by minimal residual disease (MRD) monitoring is an important biomarker for predicting relapse and stratifying treatment (1–5).
+
+% , flow cytometry generates increasingly large and information-rich
+% datasets, which provide new challenges for analysis. Modern multilaser flow cytometers are able to simultaneously measure up to 12 or more parameters and acquire
+% such information from millions of single cells (8,9)
+
+% Traditional gating of populations
+% on two-parameter plots is tedious and does not reflect the multidimensionality of the data. Moreover, both the setting of the gates and interpretation of the results are observer-dependent and require intensive training and high levels of expertise. 
+
+% Although hierarchical clustering methods
+% can place each cell in its hierarchical context within the analyzed dataset, their downside is that they often fail to reflect
+% the elliptical shapes of flow cytometric population
+
+% However, the rapidly rising complexity of multiparameter
+% flow cytometry datasets creates new challenges. Currently, the
+% analytical standard in the field involves gating, in which one
+% or more gates are defined in each histogram or dual parameter
+% plot and a sequence or combination of gates defines the population of interest. This process is tedious or even unfeasible, already requires highly experienced cytometrists and is observer
+% dependent. Most importantly, the sequential gating is limited
+% in its ability to reflect the multidimensionality of the data. A
+% solution to both the multidimensionality of flow data and the
+% observer dependency lies in the usage of unsupervised learning
+% methods.
+
+% C version of the algorithm has been implemented within R package mhca and enhanced with the possibility of assuming
+% apriori clusters for approximation, to reduce the unfavorable O(n3) time complexity for large datasets. That allowed the authors to process datasets of around
+% 106 data points within an interactive environments
+
+
+
+% problem - quadratic space complexity - even bigger problem with Mahalanobis distance and gpus 
+
+
 \subsection{Algorithm complexity and the implementation}
 
 Hierarchical Clustering (HC) is a well-known problem, and there are many algorithms that effectively solve it. Roughly, they can be divided into categories according to the data structures they employ [TODO]:
