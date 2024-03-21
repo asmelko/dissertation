@@ -10,7 +10,7 @@
                 "-pdf",
                 "-outdir=%OUTDIR%",
                 "%DOC%",
-                "-shell-escape"
+                "-lualatex"
             ],
             "env": {}
         },
