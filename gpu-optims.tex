@@ -293,7 +293,7 @@ With this in mind, we experimented with extreme data sharing techniques. There a
     \item In $N:M$ scenario, multiple left and right matrices can be read once to compute overlaps between all of them.
 \end{itemize}
 
-With such techniques, the arithemtic intensity is theoretically unbounded provided a big enough input. However, the physicall resources limit the practical values of the reuse factor. The most important resource is the register file. In order to reuse the data, thread needs to store them in the registers. The number of registers is limited and the compiler can spill the data to the slower memory if the limit is reached. Also, if the amount of resources per thread is high, the occupancy of the GPU can drop, and the achievable performance can decrease. 
+With such techniques, the arithemtic intensity is theoretically unbounded provided an infinitelly big input. However, the physicall resources limit the practical values of the reuse factor. The most important resource is the register file. In order to reuse the data, thread needs to store them in the registers. The number of registers is limited and the compiler can spill the data to the slower memory if the limit is reached. Also, if the amount of resources per thread is high, the occupancy of the GPU can drop, and the achievable performance can decrease. 
 
 The other big issue is the parallelism. Naturally, if the same worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, a big amount of benchamring need to be performed to find the optimal balance between the data sharing and the parallelism.
 
