@@ -282,7 +282,27 @@ Figure~\ref{fig:cross-correlation} depicts the visual representation of the equa
 
 Let us compute the arithmetic intensity of single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused mutliply-add operations. Considering the elements are represented as single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. To get a notion of how well a programm utilizes a hardware, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of the attainable performance of a hardware, given the arithmetic intensity of the algorithm.
 
-Another useful metric, especially for GPUs, is to obtain the \emph{ops per byte} ratio. It is computed as the GPU's math bandwidth divided by the memory bandwidth and represents the maximum number of operations that can be performed on a single byte of data. To put it into a perspective, ops per byte ratio of a modern NVIDIA V100 GPU is 
+Another useful metric, especially for GPUs, is to obtain the \emph{ops per byte} ratio. It is computed as the math bandwidth divided by the memory bandwidth and represents the maximum number of operations that can be performed on a single byte of data. To put it into a perspective, ops per byte ratio of a modern NVIDIA V100 GPU is around $17$ for single-precision floats (and if we consider the \emph{tensor-cores}, optimized for matrix multiplication, ops per byte ratio is up to $67$). Any algorithm with arithmetic intensity below ops per byte ratio is memory limited, and anything above is math limited.
+
+\subsection{Optimization techniques}
+
+With this in mind, we experimented with extreme data sharing techniques. There are many opportunities where the same data is read multiple times:
+\begin{itemize}
+    \item When computing neighboring overlaps, majority of data from left and right matrices are read multiple times.
+    \item In $1:N$ scenario, when cross-correlating one left matrix with many right matrices, the data from left matrix is read multiple times during a single overlap computation.
+    \item In $N:M$ scenario, multiple left and right matrices can be read once to compute overlaps between all of them.
+\end{itemize}
+
+With such techniques, the arithemtic intensity is theoretically unbounded provided a big enough input. However, the physicall resources limit the practical values of the reuse factor. The most important resource is the register file. In order to reuse the data, thread needs to store them in the registers. The number of registers is limited and the compiler can spill the data to the slower memory if the limit is reached. Also, if the amount of resources per thread is high, the occupancy of the GPU can drop, and the achievable performance can decrease. 
+
+The other big issue is the parallelism. Naturally, if the same worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, a big amount of benchamring need to be performed to find the optimal balance between the data sharing and the parallelism.
+
+Another important note, which alleviates the big pressure on the register file, is the multi-level memory hierarchy. If we come back to the definition of ops per byte, we can see that the memory bandwidth is very influencing factor. Especially, if our woring data resides completely in the hierarchical memory with a higher throughput then RAM, ops per byte ratio is lower. This generally means that less amount of compute is required to saturate the memory bandwidth. For L2 cache of NVIDIA V100, the ops per byte ratio is around $3.5\times$ less than for the off-chip memory. As a result, if the caches are utilized correctly, less data sharing is required to fully utilize the hardware cappabilities. 
+
+In our implementation, we took advantage of even faster memory than L2, the register file itself, to cache the data. The caching possibilities on thread registers are very limited. They are only allowed on a group of $32$ consecutive threads called a warp and allow only a specific access pattern.
+
+
+
 
 % fyzici
 % definicia
