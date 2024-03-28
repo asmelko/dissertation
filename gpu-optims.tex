@@ -254,7 +254,17 @@ After the thorough benchmarking process, we selected the most performing variant
 % order to be explored in more detail.
 
 
-\section{Cross-Correlation optimized for small inputs}
+\section{Cross-correlation optimized for small inputs}
+
+Leaving the realm of cytometry data analysis, we will focus on an extremely data-bound problem, the cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, particle physics, and with the advent of convolutional neural networks, also in machine learning. As one iterpretation, it computes a similarity of two series of data by sliding one over the other and computing the dot product of the overlapping parts. The output is typically post-processed to search for a specific feature, find the displacement, 
+
+% fyzici
+% definicia
+
+% aritmeticka intenzita
+% register sharing
+% workload imbalance
+
 
 We have already alluded that arithmetic intensity is a crucial factor in the performance of GPU algorithms. The algorithm described in this section stresses the importance of data caching when working with highly parallel machines, especially when dealing with data-bound problems.
 
