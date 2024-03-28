@@ -299,7 +299,7 @@ The other big issue is the parallelism. Naturally, if the same worker performs m
 
 Another important note, which alleviates the big pressure on the register file, is the multi-level memory hierarchy. If we come back to the definition of ops per byte, we can see that the memory bandwidth is very influencing factor. Especially, if our woring data resides completely in the hierarchical memory with a higher throughput then RAM, ops per byte ratio is lower. This generally means that less amount of compute is required to saturate the memory bandwidth. For L2 cache of NVIDIA V100, the ops per byte ratio is around $3.5\times$ less than for the off-chip memory. As a result, if the caches are utilized correctly, less data sharing is required to fully utilize the hardware cappabilities. 
 
-In our implementation, we took advantage of even faster memory than L2, the register file itself, to cache the data. The caching possibilities on thread registers are very limited. They are only allowed on a group of $32$ consecutive threads called a warp and allow only a specific access pattern.
+In our implementation, we took GPU-specific advantage of even faster memory than L2, the register file itself, to cache the data. The GPU register file is rather big, attaining $64$KB. But the caching possibilities on thread registers are very limited. They are only allowed on a group of $32$ consecutive threads called a warp and allow only a specific access pattern. Still, they provide a magnitude higher throughput than the closest cache, the shared memory.
 
 
 
