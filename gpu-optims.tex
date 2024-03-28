@@ -256,7 +256,33 @@ After the thorough benchmarking process, we selected the most performing variant
 
 \section{Cross-correlation optimized for small inputs}
 
-Leaving the realm of cytometry data analysis, we will focus on an extremely data-bound problem, the cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, particle physics, and with the advent of convolutional neural networks, also in machine learning. As one iterpretation, it computes a similarity of two series of data by sliding one over the other and computing the dot product of the overlapping parts. The output is typically post-processed to search for a specific feature, find the displacement, 
+Leaving the realm of cytometry data analysis, we will focus on an extremely data-bound problem, the cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, particle physics, and with the advent of convolutional neural networks, also in machine learning. As one iterpretation, it computes a similarity of two data series obtained by sliding one over the other and computing the dot product of the overlapping parts. The output is typically post-processed to get a richer information, such as Earth's undeground structure~\cite{zhou2021high} in seismology, road lane detection~\cite{fan2018real} in computer vision, or acousting location~\cite{belloch2015performance} in signal processing.
+
+The problem of cross-correlation performance was initially introduced to us by the physicists from Department of Physics of Material at Charles University in Prague. They used the algorithm to analyze diffraction pattern of metallic alloys from electron bacscatter diffraction (EBSD) cameras to obtain the material \emph{deformation}. That can be used to study the material characteristics, such as ellastic strain or lattice rotation.
+
+A typical input consists of a reference 2D grayscale image of analyzed material and multiple images of the "deformed" material. In $1:N$ relation, reference image is cross-correlated with each of the deformed images to find the most similar shift, which suggests the direction of deformation. But different parts of the image may me deformed differently. Therefore, images are typically divided into smaller parts, and the cross-correlation is computed for each part separately, requiring multiple $1:N$ cross-correlations. Considering such input configuration, the computation can get very expensive and the analysis becomes performance-constrained.
+
+The reference Python script provides the physicists with the computational throughput of tens of patterns per second. However, modern EBSD cameras produce data in a magnitude higher rate. But thanks to the parallel nature of the problem, this is a perfect candidate for a GPU acceleration. 
+
+\subsection{Implementation challenges}
+
+The cross-correlation of functions $f, g: \mathbb{C}\rightarrow \R$ is defined as
+\begin{equation}
+    (f \star g)(\tau) = \sum_{i=-\infty}^{\infty} f(i) g(i+\tau).
+\end{equation}
+Figure~\ref{fig:cross-correlation} depicts the visual representation of the equation applied on a discrete case of two $2\times 2$ matrices. Those are shifted to produce all the possible overlaps (Figure~\ref{fig:cross-correlation}, right). For a single shift, only overlaping elements contribude to the computation: overlapped pairs are multiplied and summed together into a single output matrix element (Figure~\ref{fig:cross-correlation}, left). For general $w \times h$ matrices, the cross-correlation has a time complexity of $\mathcal{O}(w^2 \cdot h^2)$. Alternatively, the input can be modified and passed to the Fast Fourier Transform (FFT) with a more pleasing time complexity of $\mathcal{O}(w\cdot h \cdot \log(w\cdot h))$. Yet, the hidden multiplicative factor, which materializes as an overhead in the implementations of FFT, favors the original, definition-based, approach for small problem sizes.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{img/cc.png}
+    \caption{Visual representation of the cross-correlation. Yellow and purple matrices correspond to the input matrices, and the blue matrix depicts the cross-correlation output. The coordinates on the blue matrix correspond to the shift of the yellow matrix, which is depicted on the right. Only the overlapping parts (in pink) contribute to the computation for each output matrix element.}
+    \label{fig:cross-correlation}
+\end{figure}
+
+
+Let us compute the arithmetic intensity of single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused mutliply-add operations. Considering the elements are represented as single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. To get a notion of how well a programm utilizes a hardware, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of the attainable performance of a hardware, given the arithmetic intensity of the algorithm.
+
+Another useful metric, especially for GPUs, is to obtain the \emph{ops per byte} ratio. It is computed as the GPU's math bandwidth divided by the memory bandwidth and represents the maximum number of operations that can be performed on a single byte of data. To put it into a perspective, ops per byte ratio of a modern NVIDIA V100 GPU is 
 
 % fyzici
 % definicia
@@ -266,37 +292,37 @@ Leaving the realm of cytometry data analysis, we will focus on an extremely data
 % workload imbalance
 
 
-We have already alluded that arithmetic intensity is a crucial factor in the performance of GPU algorithms. The algorithm described in this section stresses the importance of data caching when working with highly parallel machines, especially when dealing with data-bound problems.
+% We have already alluded that arithmetic intensity is a crucial factor in the performance of GPU algorithms. The algorithm described in this section stresses the importance of data caching when working with highly parallel machines, especially when dealing with data-bound problems.
 
-Cross-correlation plays a major role in signal processing and can be found in many fields of science, such as image processing, seismology, particle physics, etc. It is used to quantify the dissimilarity between two signals by computing a measure of similarity between all their shifts. The cross-correlation of two discrete functions $f$ and $g$ is defined as
-\begin{equation}
-    (f \star g)(\tau) = \sum_{i=-\infty}^{\infty} f(i) g(i+\tau).
-\end{equation} 
+% Cross-correlation plays a major role in signal processing and can be found in many fields of science, such as image processing, seismology, particle physics, etc. It is used to quantify the dissimilarity between two signals by computing a measure of similarity between all their shifts. The cross-correlation of two discrete functions $f$ and $g$ is defined as
+% \begin{equation}
+%     (f \star g)(\tau) = \sum_{i=-\infty}^{\infty} f(i) g(i+\tau).
+% \end{equation} 
 
-Figure~\ref{fig:cross-correlation} depicts the visual representation of the equation applied to a 2-dimensional discrete case with two matrices. Although the formula is quite simple, the complexity of the 2D variant reaches $\mathcal{O}(w^2 \cdot h^2)$, where $w$ and $h$ are widths and heights of input matrices, respectively. Luckily, cross-correlation can be reduced into a problem solvable by a Fourier algorithm [TODO] with a more pleasing time complexity of $\mathcal{O}(w\cdot h \cdot \log(w\cdot h))$. Yet, the hidden multiplicative factor, which materializes as an overhead in the implementations of the Fast Fourier Transform (FFT), favors the definition-based approach for small problem sizes.
+% Figure~\ref{fig:cross-correlation} depicts the visual representation of the equation applied to a 2-dimensional discrete case with two matrices. Although the formula is quite simple, the complexity of the 2D variant reaches $\mathcal{O}(w^2 \cdot h^2)$, where $w$ and $h$ are widths and heights of input matrices, respectively. Luckily, cross-correlation can be reduced into a problem solvable by a Fourier algorithm [TODO] with a more pleasing time complexity of $\mathcal{O}(w\cdot h \cdot \log(w\cdot h))$. Yet, the hidden multiplicative factor, which materializes as an overhead in the implementations of the Fast Fourier Transform (FFT), favors the definition-based approach for small problem sizes.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\textwidth]{img/cc.png}
-    \caption{Visual representation of the cross-correlation. Yellow and purple matrices correspond to the input matrices, and the blue matrix depicts the cross-correlation output. The coordinates on the blue matrix correspond to the shift of the yellow matrix, which is depicted on the right. Only the overlapping parts (in pink) contribute to the computation for each output matrix element.}
-    \label{fig:cross-correlation}
-\end{figure}
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.6\textwidth]{img/cc.png}
+%     \caption{Visual representation of the cross-correlation. Yellow and purple matrices correspond to the input matrices, and the blue matrix depicts the cross-correlation output. The coordinates on the blue matrix correspond to the shift of the yellow matrix, which is depicted on the right. Only the overlapping parts (in pink) contribute to the computation for each output matrix element.}
+%     \label{fig:cross-correlation}
+% \end{figure}
 
-\subsection{Implementation}
+% \subsection{Implementation}
 
-The definition-based approach is a straightforward implementation of the cross-correlation formula. It is a simple algorithm that computes the dot product for all $(2w - 1) \cdot (2h -1)$ overlaps of input matrices. The algorithm is highly parallelizable but suffers from a relatively significant workload imbalance (since each overlap comprises a different number of matrix elements) and a low baseline arithmetic intensity if we do not consider any data-sharing techniques. 
+% The definition-based approach is a straightforward implementation of the cross-correlation formula. It is a simple algorithm that computes the dot product for all $(2w - 1) \cdot (2h -1)$ overlaps of input matrices. The algorithm is highly parallelizable but suffers from a relatively significant workload imbalance (since each overlap comprises a different number of matrix elements) and a low baseline arithmetic intensity if we do not consider any data-sharing techniques. 
 
-\paragraph{Irregular workload} In our work, we addressed this issue by experimenting with different workers. Having multiple levels of parallelism on contemporary GPUs allows us to experiment with different `work groups' to assign them to a single overlap computation. Generally, we can choose from a \emph{warp}, a \emph{block}, or a \emph{grid} of threads on CUDA platform (in the hierarchically ascending order)\footnote{The most recent versions of CUDA introduces one more group of threads hierarchically located between a block and a grid called a \emph{block cluster}.}. They all have different ways to synchronize and share data, with a typically increasing penalty as we ascend the hierarchy. Notably, threads in a warp support data-sharing constructs within the fastest memory on a GPU --- the register file. 
+% \paragraph{Irregular workload} In our work, we addressed this issue by experimenting with different workers. Having multiple levels of parallelism on contemporary GPUs allows us to experiment with different `work groups' to assign them to a single overlap computation. Generally, we can choose from a \emph{warp}, a \emph{block}, or a \emph{grid} of threads on CUDA platform (in the hierarchically ascending order)\footnote{The most recent versions of CUDA introduces one more group of threads hierarchically located between a block and a grid called a \emph{block cluster}.}. They all have different ways to synchronize and share data, with a typically increasing penalty as we ascend the hierarchy. Notably, threads in a warp support data-sharing constructs within the fastest memory on a GPU --- the register file. 
 
-In our work, we analyzed the memory traces produced by fetching the data during the computation of the neighboring overlaps. A usable memory pattern emerges if the overlapping data is read in a typical row-major pattern. A thread $t$ in iteration $i$ requires the same data as a thread $t-1$ at iteration $i-1$. Such a pattern favors the warp-level parallelism with high-throughput shuffle intrinsics, which allow for shuffling data within thread registers. In our work, we utilized the \emph{register buffer} to read ahead the data for immediate sharing.
+% In our work, we analyzed the memory traces produced by fetching the data during the computation of the neighboring overlaps. A usable memory pattern emerges if the overlapping data is read in a typical row-major pattern. A thread $t$ in iteration $i$ requires the same data as a thread $t-1$ at iteration $i-1$. Such a pattern favors the warp-level parallelism with high-throughput shuffle intrinsics, which allow for shuffling data within thread registers. In our work, we utilized the \emph{register buffer} to read ahead the data for immediate sharing.
 
-Such work distribution enabled a moderate baseline for data sharing, increasing the arithmetic intensity of the algorithm. We also experimented with other work groups, such as assigning multiple threads or the whole block to a single overlap computation. This helped when the overall achievable parallelism was low when processing extremely small inputs.
+% Such work distribution enabled a moderate baseline for data sharing, increasing the arithmetic intensity of the algorithm. We also experimented with other work groups, such as assigning multiple threads or the whole block to a single overlap computation. This helped when the overall achievable parallelism was low when processing extremely small inputs.
 
-\paragraph{Data sharing} To further increase the arithmetic intensity, we experimented with other data-sharing techniques that the problem allowed, such as sharing the same overlapping elements between neighboring overlaps. In a \emph{one-to-many} use case, where cross-correlation is computed between one left matrix and multiple right matrices, data loaded from the left matrix can be shared among multiple right matrix overlaps. Respectively, in the \emph{n-to-m} use case, the same can be done with the right matrix. 
+% \paragraph{Data sharing} To further increase the arithmetic intensity, we experimented with other data-sharing techniques that the problem allowed, such as sharing the same overlapping elements between neighboring overlaps. In a \emph{one-to-many} use case, where cross-correlation is computed between one left matrix and multiple right matrices, data loaded from the left matrix can be shared among multiple right matrix overlaps. Respectively, in the \emph{n-to-m} use case, the same can be done with the right matrix. 
 
-Notably, all the mentioned sharing techniques are orthogonal to each other and can be freely combined. Naturally, the growing register requirements with each combined technique are bounded by a limit in the size of the register file (typically around 64KB) and the number of registers, which can be assigned to a single thread by a compiler. If the limit is reached, occupancy drops or register spilling occurs. Apart from that, one also has to consider the decreased parallelism that inherently comes with data sharing.
+% Notably, all the mentioned sharing techniques are orthogonal to each other and can be freely combined. Naturally, the growing register requirements with each combined technique are bounded by a limit in the size of the register file (typically around 64KB) and the number of registers, which can be assigned to a single thread by a compiler. If the limit is reached, occupancy drops or register spilling occurs. Apart from that, one also has to consider the decreased parallelism that inherently comes with data sharing.
 
-Therefore, to find the perfect balance between data sharing and the level of parallelism, we conducted a thorough benchmarking process and created the optimization matrix for the cross-correlation algorithm. It generally showed, that the high-overhead FFT implementation provides plenty of space for the definition-based approach to shine, even on a moderately sized n-to-m problem instances.
+% Therefore, to find the perfect balance between data sharing and the level of parallelism, we conducted a thorough benchmarking process and created the optimization matrix for the cross-correlation algorithm. It generally showed, that the high-overhead FFT implementation provides plenty of space for the definition-based approach to shine, even on a moderately sized n-to-m problem instances.
 
 
 \section{Stochastic simulation of Boolean networks}
