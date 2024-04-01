@@ -306,23 +306,50 @@ The final implementation of the cross-correlation algorithm achieved a speedup o
 
 \section{Stochastic simulation of Boolean networks}
 
-In the last section of this chapter, we will discuss the challenges of porting a stochastic simulation of Boolean networks to GPUs. 
+% Large and complex biological systems. 
+% Represented as boolean networks. Vertices represent states and edges transition between states. 
+% Transitions from a state are described by boolean formulas on the states.
 
-another domain of scientific algorithms
+% Analythical methods are limited to small models. (power of two)
+% Simulated as Monte Carlo simulations.
 
-the mission is the same -> enable more research by improving the performance
+% Bigger models require a lot of simulations. Sizek takes a non trivial amount of time. There are bigger models. Mutant analysis is even more expensive. Restricted to single mutants 
 
-describe the simulation
+% A tough problem for GPU - iterating binary tree brings a lot of branching, a lot of memory accesses, a lot of data to transfer.
+% branch divergence, memory access patterns are of concern
+% could be solved by different methods - no collaboration of boolean formuals - reduce divergence
+% - reduce memory access - store the data in a different way
 
-talk about the challenges  
-- iteration step is not suitable for GPUs 
+% Or we can use cuda nvrtc to compile the boolean formulas on the fly. This would allow us to remove the memory access. Added compilation step amortized in the bigger and longer simulations.
+
+% We enabled solbing big models in matters of milliseconds. now, consumer laptop can simulate models that were previously restricted to high-end computers. we can think about not jsut single Mutant analysis (also double tripple), python wrapper is being developed.
+
+In Systems biology, the analysis of large and complex biological systems is a challenging task. \emph{Boolean models}~\cite{wang2012boolean} have gained popularity due to their simplicity, scalability, and ability to describe complex signaling networks. A Boolean model consists of $n$ nodes with binary values --- active or inactive. A node represents an event in the system, such as a gene being expressed or a protein being activated. The complete state of the system is, therefore, defined by a boolean word composed of $n$ bits. The states can transition within each other based on $n$ Boolean formulae, one for each node. Given an initial state, the task of the model is to predict the probability distribution of system outcomes after a specified amount of time.
+
+Numerical methods, such as ExaStoLog~\cite{koltai2020exact}, have been developed and used to solve Boolean models; however, they are limited to relatively small models (tens of nodes) due to the exponential memory requirements. For larger models, it has proved to be much more efficient to approximate the results by simulation. A C++ software, MaBoSS, simulates these systems by applying the kinetic Monte-Carlo algorithm~\cite{stoll2012continuous} on the Boolean network. In summary, the MaBoSS tool simulates millions of random walks (also called the \emph{trajectories}) on the state space of the Boolean network (a directed weighted graph), which are then aggregated to compute the probability distribution of the states over a time window (see Figure~\ref{fig:maboss}).
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/cohen_trajs.png}
+    \caption{The MaBoSS projection of simulated trajectories averaged over a specific time window.}
+    \label{fig:maboss}
+\end{figure}
+
+Due to the stochastic nature, this approach can overcome the limitations of numerical methods and has enabled the analysis of bigger models, running instances with a few hundred nodes in a reasonable amount of time. On the other hand, allowing even bigger inputs would require billions of simulated trajectories in order to obtain a reliable result, which puts significant pressure on the tool and its ability to scale well. A parallel CPU MaBoSS simulation of a relatively small Sizek model~\cite{sizek2019boolean} ($n=93$) with $10^6$ trajectories takes the order of minutes on a high-end computer. Simulating models with thousands of nodes and billions of trajectories would require an order of days in runtime, hindering further analysis of the models.
+
+Another performance challenge is the so-called \emph{mutant analysis}. In an existing model, a node is \emph{mutated} to a static value, losing the ability to change its state. This technique is used to predict the effect of a gene knockout or overexpression. During the analysis, the same model is run $2n$ times to gain the predictions of each single mutation (both suppressed and expressed). Naturally, this sort of analysis is even more expensive. As a result, the analysis of double or triple mutants (where multiple nodes are mutated at once) has been subjected to a supercomputer-level task.
 
 
+\subsection{GPU acceleration challenges}
 
+Although the parallelization of MaBoSS may seem straightforward, it includes challenges that can significantly affect the overall performance. The main issue is the traversal of the binary expression tree to evaluate the Boolean formulae. Generally, traversing irregular data structures causes conditional branching and creates an irregular data access pattern. The latter ineffectively utilizes memory transactions, reducing the memory bandwidth, which is a crucial factor for GPU performance, as stated in the previous sections. Moreover, executing divergent branches on GPUs can be punished by serial execution of the threads if the branch divergence happens on the warp level. A combination of these issues may leave GPU heavily underutilized, gaining very little to no performance improvement over a well-parallelized CPU code.
 
+Branch divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads always to evaluate the whole expression. 
+The other possible approach would be to assign one formula to a thread. Naturally, this enables more parallelism but requires a more complex data structure to prevent thread divergence. The formulae need to be represented in the code so that each of their execution is issued as the same sequence of instructions. A way to achieve this is to convert formulas to CNF or DNF form and store them in the memory as a vector of bitmasks with a unified length.
 
+In our work, we partly followed the first approach. But instead of designing an ideal memory layout for the formulae, we used the \emph{CUDA NVRTC}~\cite{nvrtc-online} runtime compilation library to compile the formulas on the fly. It has the benefit of encoding the formulas into a native binary code, removing the necessity to fetch the data from the memory each time the formula is evaluated. Apart from that, the compiler can run a set of optimizations on the code, further improving the performance. Consequently, the runtime compilation comes at the cost of an additional runtime. Thankfully, our benchmarking showed that the compilation time amortizes well for simulations with reasonably big inputs.
 
-
+The final implementation of the MaBoSS simulation achieved a speedup of $100-300\times$ on real-world datasets over the parallel CPU version. Moreover, we created a synthetic test suite to stress the scalability of the implementation, which showed that the GPU implementation can simulate models with thousands of nodes and billions of trajectories in minutes. These results suggest that the consumer laptop equipped with a GPU can simulate models that were previously restricted to high-end computers. Furthermore, the double and triple mutant analysis no longer belongs just to the domain of supercomputers but could become feasible on data center-grade GPUs. Overall, we believe that the GPU acceleration of the MaBoSS simulation can significantly improve the analysis of Boolean networks and enable researchers to explore complex models while conveniently using their personal computers.
 
 
 
