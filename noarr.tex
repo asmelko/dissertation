@@ -1,22 +1,91 @@
 \chapter{Streamlining the development of parallel algorithms using Noarr}
 
-- many scientific algorithms are centered around a master data structure
-  - examples (matmul, transposition, physicell, ...)
-- the optimal run of these algorithms require an efficient memory traversal over the master data structure (both memory layout and traversal order) (both parallel and serial)
-- the domain experts usually can guess the optimal / close to optimal layout and traversal order
-- however, some optimizations require complex traversals that are very complex and error-prone to implement (tiling, levenstein, ...)
-- moreover, some traversting constants require tuning for different hardware (atlas)
-- other example is of a non expert who wants to speed up code by optimizing traversal - examples?
-  - there exist some dsls that can help with this
-- making this all by hand is very error-prone and time-consuming, unmantainable
+% - many scientific algorithms are centered around a master data structure
+%   - examples (matmul, transposition, physicell, ...)
+% - the optimal run of these algorithms require an efficient memory traversal over the master data structure (both memory layout and traversal order) (both parallel and serial)
+% - the domain experts usually can guess the optimal / close to optimal layout and traversal order
+% - however, some optimizations require complex traversals that are very complex and error-prone to implement (tiling, levenstein, ...)
+% - moreover, some traversting constants require tuning for different hardware (atlas)
+% - other example is of a non expert who wants to speed up code by optimizing traversal - examples?
+%   - there exist some dsls that can help with this
+% - making this all by hand is very error-prone and time-consuming, unmantainable
+
+% others do it too: cute, Kokos
+
+% paper 1:
+% - layout definition
+% - allocation decoupling
+% - layout agnostic
+% - CUDA compatible
+% - constants expressions
+% - no overhead
+
+% paper 2:
+% - traversal definition / agnosticism
+% - parallelism
+
+Commonly, the core computation of scientific algorithms is centered around a master data structure. The examples include a matrix composed of cell features in cytometry clustering, a grid of cells in substrate diffusion for biological systems, a tree of connections in a social network, \dots. If the data structures are regular in nature (e.g., multidimensional arrays), the general implementation of such algorithms typically contain multiple nested for loops. 
+
+Arguably, the biggest requirement for the optimal performance of these algorithms is such traversal over the master data structure that generates memory accesses in the most hardware-efficient way. This can either mean: the least number of cache misses, the best utilization of the memory hierarchy, loop unrolling, automatized vectorization. To have a brief perspective on the importance, a simple matrix transposition runs 50x faster when traverzing data in the right order.  
+
+Critically, the expert int the performance optimization domain can usually guess the optimal or close to optimal traversal. In a big majority of cases, the proper cache utilization is just a question of iterating the loops in the right order and data tiling. The issue, which takes the most programmers time and is the most error-prone, is putting these traverals into code. A simple example of writing a tiling loop of 3D grid already results in an index hell.
+
+Furthermore, some optimizations require tuning of their parameters to be most efficient on a given hardware. For memory optimizations, such tunable parameters would be for example a size of a tile to fit given cache, or loop unrolling factor to sattisty the width of vector memory/compute instructions. Carrying out these tasks not in an automatized way is unmantainable and time-consuming. There are whole projects targeting automatic optimizations of specific algorithms, such as atlas for matrix multiplcation, FFTW for FFT, SPIRAL for signal processing. cuTLASS for CUDA matrix multiplication
+
+To alleviate and streamline these mundane programming tasks, which we encountered during our work on optimizing scientific algorithms multiple times, we focused our work here and developed a pure C++ library Noarr. Naturally, there are other libraries that aim to solve the same problem, the added value of noarr is:
+\begin{itemize}
+  \item a pure c++ approach without any need for DLS or precompilers. It empowers HPC experts to swiftly code their optimizations error-prone without adding any dependency on the final product. Which is usually paid huge attention to in a scientific community.
+  \item allows for simple tuning of the traversal constants for different hardware
+  \item CUDA compatible
+  \item support for parallelization of the traversal
+  \item %take sth from cgo paper
+\end{itemize}
+
+
+\section{memory layouts and their traversal}
+
+% - example of layout definition
+
+% - example of traversal
+% - how hard to define traversal by hand
+
+% The main goal of noarr is to epressively and extensively define memory layouts and their traversals. There exists 
+
+% definition of layout
+% definition of traversal
+% they are isomorphic, but layout can be stronger than traversal eg thanks to vector instructions
+% there are not many libraries that allow to easily define custom layout.
+% there are some, which do just a specific use cases, such as Kokkos (which is a big library and is specialized just on a set of specific use cases) GridTools similarly
+% but recently, in parallel with our research, bigger players started to realize the importance of memory layout. ndspan in c++ standard and cute in cuda. ndspan is a good start, but noarr is much more extensible. cute was developed for Atlas, but it is not as general as noarr.
+% noarr defines layout by composing atom protostructs
+% column major, row major example in double for loop
+% perhaps example of transformation c->r
+% we require traversal to do it effectively
+% for traversals, there are way more other tools that do the same. some of them do it automatically, polly. many of them are, however, annotation based, requiring custom compiler to precompile the code. or compiler pragmas. They target a different audience. similar comparison is openMP vs tbb. https://link.springer.com/content/pdf/10.1007/978-3-642-03869-3_62.pdf While TBB appears to be less appropriate for parallelizing existing implementations, it fosters a good programming style and higher abstraction level for newly developed parallel programs.
+% show noarr traverse - some split tile example ... perhaps physicell
 
 
 
+\subsection{layout agnostic code}
 
-\section{memory layouts}
+% benefits of some of annotation based tools is the ability to autotune some layout parameters
+% noarr layout agnostic abstraction allows just the same
+% example of layout agnostic
+% code can run irrespective the traversal used (assuming the traversal is correct)(isomorphic)
+% find sth from cgo paper
 
-\section{layout agnostic code}
-
-\section{traversal transformations}
 
 \section{parallelism}
+
+% parallelism is a different kind of beast, it can alter the traversal
+% considering algorithms with master data structures, the parallelism is usually a question of in which nested loop are we aiming to parallelize
+% there can be caveats ofcourse, such as data dependencies, but they are usually easy to spot
+% there can be caveats, such as different hierarchies of parallelsim (either be it simd on CPUs or more prevalent GPU) - so there is a need to divide in multiple levels
+% noarr traversals are general enough to do this in a custom way
+% nevetherless, we experimented with wrappers around tbb to provide proof of concept
+% wrapper around cuda kernel launch which divides over 2 dims
+% structure for cuda shared mem?
+% examples
+
+
+
