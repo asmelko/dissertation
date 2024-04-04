@@ -1,15 +1,22 @@
 \chapter{Streamlining the development of parallel algorithms using Noarr}
 
-what are memory layouts 
+- many scientific algorithms are centered around a master data structure
+  - examples (matmul, transposition, physicell, ...)
+- the optimal run of these algorithms require an efficient memory traversal over the master data structure (both memory layout and traversal order) (both parallel and serial)
+- the domain experts usually can guess the optimal / close to optimal layout and traversal order
+- however, some optimizations require complex traversals that are very complex and error-prone to implement (tiling, levenstein, ...)
+- moreover, some traversting constants require tuning for different hardware (atlas)
+- other example is of a non expert who wants to speed up code by optimizing traversal - examples?
+  - there exist some dsls that can help with this
+- making this all by hand is very error-prone and time-consuming, unmantainable
 
-introduce the abstraction
 
-what can we do with it? layout agnostic code
 
-what more? traversal transformations
 
 \section{memory layouts}
 
 \section{layout agnostic code}
 
 \section{traversal transformations}
+
+\section{parallelism}
