@@ -44,6 +44,14 @@ To alleviate and streamline these mundane programming tasks, which we encountere
 
 \section{memory layouts and their traversal}
 
+\begin{defn}[Layout]
+  Suppose a regular $n$-dimensional array $A$ with dimension lengths $d_1, \dots, d_n$ and an index space $\mathcal{I} = \{0,\dots,d_1\}\times \dots \times \{0,\dots,d_n\}$. We define a \emph{memory layout} $\mathbb{L}$ of $A$ as a bijection $\mathbb{L}: I \to \{0,\dots,d_1\cdot \dots \cdot d_n\}$. 
+\end{defn}
+
+\begin{defn}[Layout Traversal]
+  Suppose a memory layout $\mathbb{L}$ of a regular $n$-dimensional array $A$ with dimension lengths $d_1, \dots, d_n$ and an index space $\mathcal{I} = \{0,\dots,d_1\}\times \dots \times \{0,\dots,d_n\}$. We define a \emph{traversal} $\mathbb{T}$ of $A$ as a bijection $\mathbb{T}: \{0,\dots,d_1\cdot \dots \cdot d_n\} \to I$.
+\end{defn}
+
 % - example of layout definition
 
 % - example of traversal
