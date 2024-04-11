@@ -54,15 +54,49 @@ Perhaps the most common memory layouts are row-major and column-major of a matri
 
 A more complex example of matrix layout would be a striped or a tiled layout. In a striped layout, the matrix is divided into stripes of a given width and the stripes are layed out in memory one after another. In a tiled layout, the matrix is divided into tiles of a given size and the tiles are layed out in memory one after another. Their bijections and respective indexing functions get quite complex: $L_{\text{striped}}(i,j) = (i \mod \text{stripe\_width}) \cdot d_2 + j$ and $L_{\text{tiled}}(i,j) = (i \mod \text{tile\_width}) \cdot d_2 + (j \mod \text{tile\_height})$. Arguably, adding another tile dimension (to utilize multiple levels of cache) or swaping intra-tile layout to column-major form makes the indexing function, and consequently the source code, unmantainable and difficult to read. It is impossible to guess the layout from the code and the layout is not easily changeable since all index function occurences would need to be rewritten.
 
-The developers familiar with this issue by encapsulating the memory layout into a complete object representing a data structure. Kokkos and GridTools define a set of the most used layouts used in the most used use-cases, such as for GPUs, vector instructions, ... However, the memory layout is a very general concept and it is impossible to cover all the use-cases.
+The developers familiar with this issue by encapsulating the memory layout into a complete object representing a data structure. Kokkos, platform-agnostic programming model, provides a simple syntax to define a list of static or dynamic dimensions of a multi-dimensional regular array and allows user to specify if the dimensions should be layed in memory from left to right (C-style), from right to left (Fortran-style) or in a custom stride.
+GridTools provides a similar functionality, but it is more focused on the stencil computations and allows to select back-ends (GPU, multicore-CPU, \dots) according to which the most suitable layout will be selected. However, the memory layout is a very general concept and it is impossible to cover all the use-cases.
+
+The mentioned works are mainly focused on a generalized optimization of a specific set of algorithms. They implement ways to efficiently parallelize problems, distribute and aggregate data. Still, they discovered that memory layout is integral part of the optimization process. Hence, they integrated some freedom of layout selection as a part of their libraries.
+
+Standalone layouting stuff:
+In parallel with our research, other works have been done in this area. C++ standard introduces mdspan, which will provide basic layouting functionality in standard library as soon as C++23 with more coming C++26. NVIDIA also realised the importance of extensive layouts and introduced CuTe library with a simmilar layouting algebra.
+%https://arxiv.org/html/2312.11918v1/#S3
+
+Noarr puts the biggest emphasis on expressiveness, perforamnce and extensibility of memory layouts. It is a standalone C++ header-only library based on template metaprogramming and is based on these principles:
+\begin{itemize}
+  \item \emph{named dimensions} The dimensions are not defined just by an order of some numbers, but they are named. This allows to query info of a dimension regardles its global index.
+  \item \emph{trivial layouts} A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
+\end{itemize}
+
+Noarr borrows trivial tranformations from a well-known set of loop transformation, but extends it with some more. 
+
+List some of the transformations and their examples.
+
+show row-col and col-row example
+
+show code how they are transformed
 
 Noarr takes a different approach. It allows to build a complex layout by a composition of simple atomic transformations, such as... Examples of row-major col-major, tiled, striped, ... The dimensions are mapped to ascii letters. naming them allows to interchange them, rename, add, modify\dots
 
-In parallel with our research, other works have been done in this area. 
+\subsection{Traversal}
+
+Sometimes complex layout has to be iterated by a complex traversal. 
+
+The traversals are subject to the same transformation as the layouts.
 
 \begin{defn}[Layout Traversal]
   Suppose a memory layout $\mathbb{L}$ of a regular $n$-dimensional array $A$ with dimension lengths $d_1, \dots, d_n$ and an index space $\mathcal{I} = \{0,\dots,d_1\}\times \dots \times \{0,\dots,d_n\}$. We define a \emph{traversal} $\mathbb{T}$ of $A$ as a bijection $\mathbb{T}: \{0,\dots,d_1\cdot \dots \cdot d_n\} \to I$.
 \end{defn}
+
+
+In a way, they are isomorphic. layout provides more degrees of freedom since loop transformations can contain time dependencies.
+
+There are much more tools around loop transformations, also some automatized ones.
+
+We extend the concept of layout to a traversal. motivation from cgo
+
+
 
 % - example of layout definition
 
