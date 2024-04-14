@@ -59,6 +59,13 @@
 
 \usepackage{chemfig}
 
+\usepackage{minted}
+\usemintedstyle{vs}
+\colorlet{LightGray}{black!3}
+\newmintedfile[inputmintedcpp]{c++}{bgcolor=LightGray,tabsize=2,fontsize=\scriptsize,linenos,breaklines,escapeinside=\#\#}
+\def\FancyVerbVspace{0pt}
+\AtBeginEnvironment{minted@colorbg}{\setlength{\medskipamount}{0pt}}
+
 \newcommand{\xxx}[1]{\textcolor{red}{#1}}
 
 
