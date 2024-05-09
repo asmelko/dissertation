@@ -62,7 +62,7 @@ To alleviate and streamline the mundane programming tasks repeatedly encountered
 % \end{itemize}
 
 
-\section{memory layouts and their traversal}
+\section{Memory Layouts}
 
 % - example of layout definition
 
@@ -171,45 +171,112 @@ Noarr aims on expressiveness, extendibility and mantainability of the code. The 
 
 \begin{itemize}
   \item \emph{Named dimensions} --- the dimensions are not defined just by an order of shape or stride vectors, but they are named. This allows to query a dimension regardless its global index.
-  \item \emph{Proto-layouts} --- A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
+  \item \emph{Proto-structures} --- a set of building blocks is provided to allow to easily define complex layouts by their various composition.
 \end{itemize}
-
-Although Noarr predates mdspan and CuTe, it shares great similarity with the formal approach of CuTe. Noarr takes inspiration from algebraic data types and allows to c
-
-Noarr puts the biggest emphasis on expressiveness, perforamnce and extensibility of memory layouts. It is a standalone C++ header-only library based on template metaprogramming and is based on these principles:
-\begin{itemize}
-  \item \emph{named dimensions} The dimensions are not defined just by an order of some numbers, but they are named. This allows to query info of a dimension regardles its global index.
-  \item \emph{trivial layouts} A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
-\end{itemize}
-
-Noarr borrows trivial tranformations from a well-known set of loop transformation, but extends it with some more. These are dimension reordering, 
-strip mining, fusion, fission, but also a z-curve
 
 Let us give an example of row-major matrix memory layout using noarr. Considering \mintinline{c++}{'i'} as a row dimension and \mintinline{c++}{'j'} as a column dimension, the layout can be defined as follows:
-\begin{minted}[breaklines]{c++}
-auto row_major = scalar<float>() ^ sized_vector<'j'>(n) ^ sized_vector<'i'>(m);
-\end{minted}
-The layout reads from left to right, signaling the innermost dimension first. 
-It is apparent, that \mintinline{c++}{row_major} object represents only a layout, and to access the data, a memory pointer has to be provided:
-\begin{minted}[breaklines]{c++}
-float* data = new float[n * m];
-float element = row_major | get_at<'i', 'j'>(data, 0, 0);
-\end{minted}
-To define a column-major layout, preserving the semantics of the dimension name, the layout can be defined as follows:
-\begin{minted}[breaklines]{c++}
-auto col_major = scalar<float>() ^ sized_vector<'i'>(m) ^ sized_vector<'j'>(n);
-\end{minted}
-The layout can be modified even more by introducing multiple dimensions. For example, to define a tiled layout, we add two more dimensions for the tiles:
-\begin{minted}[breaklines]{c++}
-auto tiled = scalar<float>() ^ sized_vector<'l'>(tile_n) ^ sized_vector<'k'>(tile_m) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
-\end{minted}
-Here shows the power of named dimensions. Physically (in memory), \mintinline{c++}{'l'} and \mintinline{c++}{'k'} dimensions are innermost, representing column and row of a tile respetively. Dimensions \mintinline{c++}{'j'} and \mintinline{c++}{'i'} are outermost, representing column and row of a matrix, whose elements are whole tiles. With such semantics, tiles are both among themselves and within in row-major format. Unsurprisingly, the inter-tile layout can be changed to column-major by a simple rewrite: 
-\begin{minted}[breaklines]{c++}
-  auto tiled = scalar<float>() ^ sized_vector<'k'>(tile_m) ^ sized_vector<'l'>(tile_n) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
+
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  // Some storage
+  int* ptr = new int[80];
+  // A row-major matrix layout
+  auto row_l = scalar<int>() ^ vector<'j', 'i'>(lit<3>, 4);
+  // A bag object with a pointer and a layout
+  bag b = make_bag(row_l, ptr);
+  int elem = b.at<'i', 'j'>(0, 0);
 \end{minted}
 
+Although Noarr predates mdspan and CuTe, it shares many similarities: be it separation of layout and underlying memory or ability to define static and dynamic sized dimensions. Perhaps the biggest difference is the absence of a stride vector. Here come named dimensions at play. The matrix layout above can be changed to column-major by a simple named dimensions swap:
+\begin{minted}[]{c++}
+auto col_l = scalar<int>() ^ vector<'i', 'j'>(4, lit<3>);
+\end{minted}
+The order, in which the dimensions are defined, signals the way how they are layed in memory, going from the firstly defined as  innermost to the last one as the outermost. Therefore, all of the vastly used strides be achieved just by permuting the dimensions order --- and are computed under the hood, without user interaction.
 
-\subsection{Traversal}
+The other aspect of Noarr is the way how layout is defined --- as a composition of building blocks, the protostructures. We already mentioned \texttt{row\_l}, which is a composition of \texttt{scalar} and \texttt{vector}, which when composed, represent a vector of vectors of integer scalars --- an integer matrix. The existing layouts are also subjects to extension:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  // A layout for a batch of row-major matrices
+  auto batched_l = row_l ^ vector<'b'>(10);
+  int o1 = batched_l | offset<'i', 'j', 'b'>(0, 0, 1); // = 12
+  // A tiled matrix layout (both row-major and col-major, 
+  // where 'k' and 'l' denote tile rows and columns)
+  auto tiled_rr_l = row_l ^ vector<'l', 'k'>(5, 10);
+  auto tiled_rc_l = row_l ^ vector<'k', 'l'>(10, 5);
+  int o2 = tiled_rr_l | offset<'i', 'j', 'k', 'l'>(0, 0, 1, 1); // = 72
+  // A 3rd row of matrix tiles sublayout
+  auto tiled_3rd_l = tiled_rc_l ^ fix<'k'>(3);
+  int o3 = tiled_3rd_l | offset<'i', 'j', 'l'>(0, 0, 0); // = 36
+  // A tiled matrix layout acting as a 2D matrix layout
+  auto tiled_2d_l = tiled_rr_l ^ merge_blocks<'i', 'k', 'I'>() ^ merge_blocks<'j', 'l', 'J'>();
+  int o4 = tiled_2d_l | offset<'I', 'J'>(1, 1); // = 72
+\end{minted}
+
+These protostructures allow for expressing complex layouts in a readable and error-prone way. Their extensibility in composition and separation from the underlying memory also allows for plug-in layouts, which can be easily reused in different parts of the code.
+
+
+% Noarr puts the biggest emphasis on expressiveness, perforamnce and extensibility of memory layouts. It is a standalone C++ header-only library based on template metaprogramming and is based on these principles:
+% \begin{itemize}
+%   \item \emph{named dimensions} The dimensions are not defined just by an order of some numbers, but they are named. This allows to query info of a dimension regardles its global index.
+%   \item \emph{trivial layouts} A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
+% \end{itemize}
+
+% Noarr borrows trivial tranformations from a well-known set of loop transformation, but extends it with some more. These are dimension reordering, 
+% strip mining, fusion, fission, but also a z-curve
+
+% Let us give an example of row-major matrix memory layout using noarr. Considering \mintinline{c++}{'i'} as a row dimension and \mintinline{c++}{'j'} as a column dimension, the layout can be defined as follows:
+% \begin{minted}[breaklines]{c++}
+% auto row_major = scalar<float>() ^ sized_vector<'j'>(n) ^ sized_vector<'i'>(m);
+% \end{minted}
+% The layout reads from left to right, signaling the innermost dimension first. 
+% It is apparent, that \mintinline{c++}{row_major} object represents only a layout, and to access the data, a memory pointer has to be provided:
+% \begin{minted}[breaklines]{c++}
+% float* data = new float[n * m];
+% float element = row_major | get_at<'i', 'j'>(data, 0, 0);
+% \end{minted}
+% To define a column-major layout, preserving the semantics of the dimension name, the layout can be defined as follows:
+% \begin{minted}[breaklines]{c++}
+% auto col_major = scalar<float>() ^ sized_vector<'i'>(m) ^ sized_vector<'j'>(n);
+% \end{minted}
+% The layout can be modified even more by introducing multiple dimensions. For example, to define a tiled layout, we add two more dimensions for the tiles:
+% \begin{minted}[breaklines]{c++}
+% auto tiled = scalar<float>() ^ sized_vector<'l'>(tile_n) ^ sized_vector<'k'>(tile_m) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
+% \end{minted}
+% Here shows the power of named dimensions. Physically (in memory), \mintinline{c++}{'l'} and \mintinline{c++}{'k'} dimensions are innermost, representing column and row of a tile respetively. Dimensions \mintinline{c++}{'j'} and \mintinline{c++}{'i'} are outermost, representing column and row of a matrix, whose elements are whole tiles. With such semantics, tiles are both among themselves and within in row-major format. Unsurprisingly, the inter-tile layout can be changed to column-major by a simple rewrite: 
+% \begin{minted}[breaklines]{c++}
+%   auto tiled = scalar<float>() ^ sized_vector<'k'>(tile_m) ^ sized_vector<'l'>(tile_n) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
+% \end{minted}
+
+
+\section{Layout Traversals}
+
+Having specified how a data structure is layed in memory, the other possible point of optimization lays in the the order how the data structre is iterated, its \emph{traversal}. In general, a traversal is usually written as a sequence of nested loops, which in turn generates an order of accesses. Imaging such ordering as $ C\subseteq \N \to \mathbb{I}$, where $\mathbb{I}$ is an index space of a data structure, the traversal shares many similarities with the memory layout. Very similarly as with a layout, modifying a traversal can improve data locality, both in time and space. Although modifying traversal is constrained by data dependencies, loop transformation is still a well researched topic and complements the memory layout optimization~\cite{clauss2000automatic}.
+
+\subsection{Background}
+
+Quantitatively, \emph{loop transformation} is perhaps more researched topic than layout transformation. Neither aforementioned library provide ways to transform a traversal, but there are many other tools that do. Contemporary compilers employ sophisticated loop optimizers based on the polyhedral model, such as Graphite in GCC~\cite{trifunovic2010graphite} or Polly in LLVM~\cite{grosser2012polly}. However, these optimizers are limited by the lack of information specified by the user in the code.
+
+For more user-guides approaches, there are annotation-based tools, such as Poet~\cite{yi2007poet}, Chill~\cite{chen2008chill} or Loopy~\cite{namjoshi2016loopy}. These tools allow to specify the traversal transformations by adding special comments or pragmas to the code. The transformations are then applied by a precompiler, which generates the optimized code. These tools are very easy to use, but they require a custom compiler extension to be installed and they lack extensibility.
+
+Perhaps the best representative of annotation-based frameworks is done by Kruse et al. The authors have presented pragma-based user-directed loop transformations for the Clang compiler, which has been partly ported to OpenMP. The transformations include loop fusion, fission, tiling, interchange, reversal and others. The transformations include loop tiling:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  #pragma clang loop(i,j) tile sizes(4,8)
+  for (int i = 0; i < n; i+=1)
+    for (int j = 0; j < m; j+=1)
+  // transforms into
+  for (int i1 = 0; i1 < n; i1+=4)
+    for (int j1 = 0; j1 < m; j1+=8)
+      for (int i2 = i1; i2 < n && i2 < i1+4; i2+=1)
+        for (int j2 = j2; j2 < m && j2 < j1+8; j2+=1)
+\end{minted}
+or loop reodering:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  #pragma clang loop(i,j) interchange permutation(j,i)
+  for (int i = 0; i < n; i+=1)
+    for (int j = 0; j < m; j+=1)
+  // transforms into
+  for (int j = 0; j < m; j+=1)
+    for (int i = 0; i < n; i+=1)
+\end{minted}
+but also loop fusion, fission, reversal and others. 
 
 As a complement to how memory is layed out, the way how it is traversed is equally important. A traversal over a data structure specifies an order, in which the elements of a data structure is accessed. Imagining such ordering as a bijection $\N \to \mathbb{I}$, where $\mathbb{I}$ is an index space of a data structure, the traversal shares many similarities with the memory layout. They both are subject to the same transformation: reordering, striping, tiling, \dots. With this in mind, it is easy to think that the aims of temporal locality and space locality are equaly achievable by both due to their isomorphic nature. https://dl.acm.org/doi/pdf/10.1145/346023.346031
 Loop transformations are constrained by data dependencies, which may prohibit them from either coalesced memory loading on GPUs or vector instructions on CPUs. Nevertheless, traversal optimization is still a well reseached topic and complements the memory layout optimization especially when traversing multiple data structures of different layout at once, what is very common case.
