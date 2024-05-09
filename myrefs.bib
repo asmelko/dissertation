@@ -36,3 +36,13 @@
 	eprint = {https://www.biorxiv.org/content/early/2024/03/20/2024.03.18.585487.full.pdf},
 	journal = {bioRxiv}
 }
+
+@inproceedings{10.1145/3649411.3649414,
+author = {\v{S}melko, Adam and Kruli\v{s}, Martin and Klepl, Ji\v{r}\'{\i}},
+title = {GPU-acceleration of neighborhood-based dimensionality reduction algorithm EmbedSOM},
+year = {2024},
+publisher = {Association for Computing Machinery},
+abstract = {Dimensionality reduction methods have found vast applications as visualization tools in diverse areas of science. Although many different methods exist, their performance is often insufficient for providing quick insight into many contemporary datasets. In this paper, we propose a highly optimized GPU implementation of EmbedSOM, a dimensionality reduction algorithm based on self-organizing maps. We detail the optimizations of k-NN search and 2D projection kernels which comprise the core of the algorithm. To tackle the thread divergence and low arithmetic intensity, we use a modified bitonic sort for k-NN search and a projection kernel that utilizes vector loads and register caches. The evaluated performance benchmarks indicate that the optimized EmbedSOM implementation is capable of projecting over 30 million individual data points per second.},
+booktitle = {16th Workshop on General Purpose Processing Using GPU},
+pages = {13--18}
+}

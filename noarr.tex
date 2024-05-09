@@ -24,21 +24,25 @@
 % - traversal definition / agnosticism
 % - parallelism
 
-Commonly, the core computation of scientific algorithms is centered around a master data structure. The examples include a matrix composed of cell features in an agent-based simulator~\cite{ghaffarizadeh2018physicell}, a grid of substrates in a diffusion solver~\cite{ghaffarizadeh2016biofvm}, a transition rates graph for Markov processes~\cite{koltai2020exact} \dots. In vast majority of these algorithms, the most performance-critical part hides in a nested loop over these data structures.
+Commonly, the core computation of scientific algorithms is centered around a master data structure. The examples include a matrix composed of cell features in an agent-based simulator~\cite{ghaffarizadeh2018physicell}, a grid of substrates in a diffusion solver~\cite{ghaffarizadeh2016biofvm}, a transition rates graph for Markov processes~\cite{koltai2020exact}, etc. In vast majority of these algorithms, the location of the most performance-critical parts lay in a nested loop over these data structures.
 
-Possibly due to the lack of hardware expertise, there was no special attention paid to the memory performance when such loops were written~\cite{clauss2000automatic}. As a result, the programs show poor data locality, spending most of CPU cycles waiting for memory pipeline to deliver the data. It has been a result of many works, that changing the way how data is layed in memory of modifying the nested loops can result in a significant performance improvement~\cite{gong2018empirical,stengel2015quantifying,serpa2019memory}. Such optimizations may include decreasing the number of cache misses by grouping the operation on the same data together, employing prefetching by streamlining the memory access pattern or utilizing the vector instructions by aligning the data in memory.
+Possibly due to the lack of hardware expertise, usually there is no special attention paid to the memory performance when such loops are written by the domain experts~\cite{clauss2000automatic}. As a result, the programs show poor data locality, spending most of CPU cycles waiting for memory pipeline to deliver the data. 
 
-Arguably, given a nested loop to optimize, the expert in performance optimization domain can pinpoint the biggest bottlenecks w.r.t. memory and propose close to optimal modifications with great probability. The most common modifications would include reordering the loops for the most possible serial access pattern and dividing the loops into tiles or strides to employ cache hierarchies~\cite{wolf1991data}. The issue, which takes the most programmers time, is putting these modifications into code. A simple tiling modification of nested loop of depth 3 already results in a verbose and error-prone code:
+A plethora of research works confirm, that changing the way how data is layed in memory or modifying the nested loops can result in a significant performance improvement~\cite{gong2018empirical,stengel2015quantifying,serpa2019memory}. Such optimizations may include decreasing the number of cache misses by grouping the operation on the same data together, employing prefetching by streamlining the memory access pattern or utilizing the vector instructions by aligning the data in memory.
+
+Arguably, given a nested loop to optimize, the expert in performance optimization domain can pinpoint the biggest bottlenecks w.r.t. memory and propose close to optimal modifications with great probability. The most common modifications would include reordering the loops for the most possible serial access pattern and dividing the loops into tiles or strides to employ cache hierarchies~\cite{wolf1991data}. The problematic activity here, which takes the most programmers time, is putting these modifications into code. As an example, let us have a nested loop of depth 3 with control variables \texttt{i, j, k} and bounds \texttt{I, J, K}. A simple tiling modification of the loop adds complexity in loop depth, variable count and index computation: 
 \begin{minted}[fontsize=\footnotesize,breaklines]{c++}
-for (i = 0; i < I / 32; i++)
-    for (j = 0; j < J / 32; j++)
-        for (k = 0; k < K / 32; k++)
-            for (ii = 0; ii < 32; ii++)
-                for (jj = 0; jj < 32; jj++)
-                    for (kk = 0; kk < 32; kk++)
+for (i1 = 0; i1 < I / tile_I; i1++)
+  for (j1 = 0; j1 < J / tile_J; j1++)
+    for (k1 = 0; k1 < K / tile_K; k1++)
+      for (i2 = 0; i2 < tile_I; i2++)
+        for (j2 = 0; j2 < tile_J; j2++)
+          for (k2 = 0; k2 < tile_K; k2++)
+          // i=i1*tile_I+i2; j=j1*tile_J+j2; k=k1*tile_K+k2;
 \end{minted}
+Omitting corner cases, the code is already verbose and rathererror-prone. Naturally, the complexity of the code grows with the complexity of the optimization.
 
-Many tools have been developed to alleviate this issue. Some provide automatic optimizations build within a compiler~\cite{trifunovic2010graphite,grosser2012polly}, some extend a compiler with annotations to guide the optimization process~\cite{donadio2005language,yi2007poet,chen2008chill,namjoshi2016loopy} and others include ad-hoc solutions for a specific family of algorithms~\cite{9485033,AFANASYEV2021100707}. However, a very little attention has been paid to aiding HPC programmers in writing the optimized code from the scratch, by providing them a clean and mantainable way to express complex loop traversal and memory layout fit for their specific problem.
+Thankfully, many tools have been developed to alleviate this issue. Some provide automatic optimizations build within a compiler~\cite{trifunovic2010graphite,grosser2012polly}, some extend a compiler with annotations to guide the optimization process~\cite{donadio2005language,yi2007poet,chen2008chill,namjoshi2016loopy} and others include ad-hoc solutions for a specific family of algorithms~\cite{9485033,AFANASYEV2021100707}. However, a very little attention has been paid to aiding HPC programmers in writing the optimized code from the scratch, by providing them a clean and mantainable way to express complex loop traversal and memory layout fit for their specific problem.
 
 To alleviate and streamline the mundane programming tasks repeatedly encountered during our work on optimizing scientific algorithms, we focused our work on developing a C++ library \emph{Noarr}. The main benefit of the library is that it allows to expressively and extensively define memory layouts of regular $n$-dimensional arrays and provides loop transformation primitives for their optimal traversal. It empowers HPC experts to swiftly develop their optimizations as a clean, error-prone code open to autotuning and parallelism, while staying within borders of a C++ standard without adding any dependency on the final software product (which is an advantage for the deployment in a scientific community).
 
@@ -94,20 +98,83 @@ Arguably, adding another tile dimension (to utilize multiple levels of cache) or
 
 \subsection{Background}
 
-The importance of these issues has been recognized by the HPC community, especially by the authors of HPC programming frameworks. Perhaps the oldest example is Kokkos~\cite{CARTEREDWARDS20143202}, a platform-agnostic programming model, that first defined a memory layout as a first class object. The layout is defined as a vector of dynamic dimension lengths; the dimensions are layed out in memory from left to right (leftmost dimension being layed in the memory continuously with a stride of 1, also called Fortran-style), from right to left (C-style) or by a custom vector of strides. Such simple approach covers a wide range of HPC use-cases and has been adopted by other frameworks, such as GridTools~\cite{AFANASYEV2021100707}.
+The importance of these issues has been recognized by the HPC community, especially by the authors of HPC programming frameworks. Perhaps the oldest example is Kokkos~\cite{CARTEREDWARDS20143202}, a platform-agnostic programming model, that first defined a memory layout as a first class object. The layout is defined as a vector of dynamic dimension lengths; the dimensions are layed out in memory from left to right (leftmost dimension being layed in the memory continuously with a stride of 1, also called Fortran-style), from right to left (perhaps the most used, C-style) or generally by a custom vector of strides. Such simple approach covers a wide range of HPC use-cases and has been adopted by other frameworks, such as GridTools~\cite{AFANASYEV2021100707}. An example of defining a layout with $3$ dimensions of lenghts $3$, $3$ and $4$ and their respective strides $1$, $5$ and $20$ in Kokkos is as follows:
 
-Recently, more mainstream communities started to invest time. C++ has standardized mdspan in C++23. It takes a finer approach, allowing to define layout dimensions using a more complex extent structure.  Such structure allows to define some dimension lengths as static (known at compile time) and mix them with some dynamic (known at runtime). With such information during compile-time, a compiler can employ optimizations such as constant folding, loop unrolling or automatized vectorization. Similalry as with Kokkos, it also defines a LayoutPolicy, responsible for converting dimensions to underlying 1D memory. 
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  // Some storage
+  int* ptr = new int[80];
+  // A layout object with pairs of size and stride
+  Kokkos::LayoutStride layout(3, 1, 3, 5, 4, 20);
+  // A view from the pointer and the layout
+  Kokkos::View<int***> w(ptr, layout);
+  int elem = w(0, 0, 0);
+\end{minted}
+  
 
+Recently, much bigger communities has started to invest time in designing an extensible way of definining layouts. C++ has standardized \emph{mdspan} in C++23. It takes a finer approach, allowing to define layout dimensions using a more complex extent structure.  Such structure allows to define some dimension lengths as static (known at compile time) and mix them with some dynamic (known at runtime). With such information during compile-time, a compiler can employ optimizations such as constant folding, loop unrolling or automatized vectorization. Similarly as with a vector of strides in Kokkos, it defines a \texttt{LayoutPolicy}, responsible for converting dimensions to underlying 1D memory. 
 
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  // Some storage
+  int* ptr = new int[80];
+  // A dimension extent structure
+  std::extents<3, 3, std::dynamic_extent> ext(4);
+  // mdspan object with a pointer, extents and layout policy
+  std::mdspan<int, decltype(ext), std::layout_left> s(ptr, ext);
+  int elem = s[0, 0, 0];
+\end{minted}
 
-The developers familiar with this issue by encapsulating the memory layout into a complete object representing a data structure. Kokkos, platform-agnostic programming model, provides a simple syntax to define a list of static or dynamic dimensions of a multi-dimensional regular array and allows user to specify if the dimensions should be layed in memory from left to right (C-style), from right to left (Fortran-style) or in a custom stride.
-GridTools provides a similar functionality, but it is more focused on the stencil computations and allows to select back-ends (GPU, multicore-CPU, \dots) according to which the most suitable layout will be selected. However, the memory layout is a very general concept and it is impossible to cover all the use-cases.
+Nvidia has very recently introduced \emph{CuTe}, a collection of C++ CUDA template abstractions for defining and operating on hierarchically multidimensional layouts of threads and data~\cite{cute-online}. It follows similar principles as mdspan: it defines \emph{shape}, \emph{stride} and \emph{tensor} as alternatives to Extents, LayoutPolicy and mdspan. An example of defining a row-major matrix layout in CuTe is as follows:
 
-The mentioned works are mainly focused on a generalized optimization of a specific set of algorithms. They implement ways to efficiently parallelize problems, distribute and aggregate data. Still, they discovered that memory layout is integral part of the optimization process. Hence, they integrated some freedom of layout selection as a part of their libraries.
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  // Some storage
+  int* ptr = new int[80];
+  // A layout as a pair of shape and stride
+  Layout l = make_layout(
+    make_shape(Int<3>(), Int<3>(), 4),
+    make_stride(Int<1>(), Int<3>(), Int<9>())
+  );
+  // A tensor object with a pointer and a layout
+  Tensor t = make_tensor(ptr, l);
+  int elem = t(0, 0, 0);
+\end{minted}
 
-Standalone layouting stuff:
-In parallel with our research, other works have been done in this area. C++ standard introduces mdspan, which will provide basic layouting functionality in standard library as soon as C++23 with more coming C++26. NVIDIA also realised the importance of extensive layouts and introduced CuTe library with a simmilar layouting algebra.
-%https://arxiv.org/html/2312.11918v1/#S3
+Shapes and strides can be nested, creating a hierarchy of coordinates. Also, every layout (even a nested one) can be indexed with 1D coordinate iterating the index space in colexicografix order. This allows for a natural indexation of complicated layouts; e.g., a tiled matrix 4D layout can be indexed using standard 2D coordinates, hiding the complexity of the layout. 
+Apart from that, CuTe takes also a formal approach, creating a \emph{layout algebra}. It defines a set of operations over layouts, such as concatenation, composition, tiling, etc. These operations are used to build more complex layouts from simpler ones.
+
+% CuTe - much more formal approach - defines a layout algebra 
+% more complex layout able to "hide dimensions"
+% more complex stride, which does not have to 
+
+% If you're familiar with the C++23 feature mdspan, this is an important difference between mdspan layout mappings and CuTe Layouts. In CuTe, Layout is a first class citizen, is natively hierarchical to naturally represent functions beyond row-major and column-major, and can similarly be indexed with a hierarchy of coordinates. (mdspan layout mappings can represent hierarchical functions as well, but this requires defining a custom layout.) Input coordinates for an mdspan must have the same shape as the mdspan; a multidimensional mdspan does not accept 1-D coordinates.
+
+% CuTe provides an "algebra of Layouts" to support combining layouts in different ways. This algebra includes operations such as
+
+% Layout functional composition,
+% a notion of Layout "product" to reproduce one layout according to another, and
+% a notion of Layout "divide" to split one layout according to another.
+% Common utilities for building complicated layouts from simpler ones depend on the Layout product. Common utilities for partitioning layouts (of data, for example) across other layouts (of threads, for example) depend on the Layout divide. All of these utilities rely on the functional composition of Layouts.
+
+% In this section, we'll build up the tools of the Layout algebra and explain some of these core operations in detail.
+
+% The developers familiar with this issue by encapsulating the memory layout into a complete object representing a data structure. Kokkos, platform-agnostic programming model, provides a simple syntax to define a list of static or dynamic dimensions of a multi-dimensional regular array and allows user to specify if the dimensions should be layed in memory from left to right (C-style), from right to left (Fortran-style) or in a custom stride.
+% GridTools provides a similar functionality, but it is more focused on the stencil computations and allows to select back-ends (GPU, multicore-CPU, \dots) according to which the most suitable layout will be selected. However, the memory layout is a very general concept and it is impossible to cover all the use-cases.
+
+% The mentioned works are mainly focused on a generalized optimization of a specific set of algorithms. They implement ways to efficiently parallelize problems, distribute and aggregate data. Still, they discovered that memory layout is integral part of the optimization process. Hence, they integrated some freedom of layout selection as a part of their libraries.
+
+% Standalone layouting stuff:
+% In parallel with our research, other works have been done in this area. C++ standard introduces mdspan, which will provide basic layouting functionality in standard library as soon as C++23 with more coming C++26. NVIDIA also realised the importance of extensive layouts and introduced CuTe library with a simmilar layouting algebra.
+% %https://arxiv.org/html/2312.11918v1/#S3
+
+\subsection{Noarr Layouts}
+
+Noarr aims on expressiveness, extendibility and mantainability of the code. The main points which distinguish Noarr from other libraries are:
+
+\begin{itemize}
+  \item \emph{Named dimensions} --- the dimensions are not defined just by an order of shape or stride vectors, but they are named. This allows to query a dimension regardless its global index.
+  \item \emph{Proto-layouts} --- A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
+\end{itemize}
+
+Although Noarr predates mdspan and CuTe, it shares great similarity with the formal approach of CuTe. Noarr takes inspiration from algebraic data types and allows to c
 
 Noarr puts the biggest emphasis on expressiveness, perforamnce and extensibility of memory layouts. It is a standalone C++ header-only library based on template metaprogramming and is based on these principles:
 \begin{itemize}
