@@ -254,9 +254,7 @@ Having specified how a data structure is layed in memory, the other possible poi
 
 Quantitatively, \emph{loop transformation} is perhaps more researched topic than layout transformation. Neither aforementioned library provide ways to transform a traversal, but there are many other tools that do. Contemporary compilers employ sophisticated loop optimizers based on the polyhedral model, such as Graphite in GCC~\cite{trifunovic2010graphite} or Polly in LLVM~\cite{grosser2012polly}. However, these optimizers are limited by the lack of information specified by the user in the code.
 
-For more user-guides approaches, there are annotation-based tools, such as Poet~\cite{yi2007poet}, Chill~\cite{chen2008chill} or Loopy~\cite{namjoshi2016loopy}. These tools allow to specify the traversal transformations by adding special comments or pragmas to the code. The transformations are then applied by a precompiler, which generates the optimized code. These tools are very easy to use, but they require a custom compiler extension to be installed and they lack extensibility.
-
-Perhaps the best representative of annotation-based frameworks is done by Kruse et al. The authors have presented pragma-based user-directed loop transformations for the Clang compiler, which has been partly ported to OpenMP. The transformations include loop fusion, fission, tiling, interchange, reversal and others. The transformations include loop tiling:
+For more user-guides approaches, there are annotation-based tools, such as Poet~\cite{yi2007poet}, Chill~\cite{chen2008chill} or Loopy~\cite{namjoshi2016loopy}. These tools allow to specify the traversal transformations by adding special comments or pragmas to the code. The transformations are then applied by a precompiler, which generates the optimized code. Perhaps the best representative of annotation-based frameworks is done by Kruse et al.~\cite{kruse2018user}. The authors have presented pragma-based user-directed loop transformations for the Clang compiler, which has been partly ported to OpenMP. The transformations include loop tiling:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
   #pragma clang loop(i,j) tile sizes(4,8)
   for (int i = 0; i < n; i+=1)
@@ -276,98 +274,127 @@ or loop reodering:
   for (int j = 0; j < m; j+=1)
     for (int i = 0; i < n; i+=1)
 \end{minted}
-but also loop fusion, fission, reversal and others. 
+but also loop fusion, fission, reversal and others~\cite{mckinley1996improving}. 
 
-As a complement to how memory is layed out, the way how it is traversed is equally important. A traversal over a data structure specifies an order, in which the elements of a data structure is accessed. Imagining such ordering as a bijection $\N \to \mathbb{I}$, where $\mathbb{I}$ is an index space of a data structure, the traversal shares many similarities with the memory layout. They both are subject to the same transformation: reordering, striping, tiling, \dots. With this in mind, it is easy to think that the aims of temporal locality and space locality are equaly achievable by both due to their isomorphic nature. https://dl.acm.org/doi/pdf/10.1145/346023.346031
-Loop transformations are constrained by data dependencies, which may prohibit them from either coalesced memory loading on GPUs or vector instructions on CPUs. Nevertheless, traversal optimization is still a well reseached topic and complements the memory layout optimization especially when traversing multiple data structures of different layout at once, what is very common case.
+These tools are very easy to use, and their ability to combine then to form complex loop transformations make them very expressive. Perhaps the biggest downsight is that they are very difficult to extend and for majority of them, a precompiler with an extra preprocessing step, or a custom compiler extension is needed.
 
-Quantitatively, Loop transformation is perhaps more researched topic. Many approaches were explored. 
+On the other hand, the target problems for annotation-based loop transformation tools are somehow limited. Naturally, the best use of them is made, when there is already a baseline implementation and the optimization is achieved just by adding single line on top of the loop. However, when developing an optimized solution from the scratch and when the scale of the program passes a certain complexity threshold, optimizing just by annotations may become difficult. Pehaps a good case study is to compare paralelizing using OpenMP, an also compiler-based library, with pure C++ libraries, such as TBB. Case studies generally confirm, that ease of expressing parallelism in OpenMP is traded for a lower abstraction level and flexibility. Language-based approaches, such as TBB, can utilize object-oriented design, for more control, fostering of good programming style and higher abstraction level for newly developed parallel programs~\cite{kegel2009using,ajkunic2012comparison,refsnes2011comparison}.
 
-An automatized approach based on polyhedral models Polly, Graphite.
+\subsection{Noarr Traversals}
 
-Annotation based tools.
+The similarities in memory layout and its traversal led to the development of Noarr Traversals. It is based on an idea, that each single loop, in some sequence of nested loops, represents an iteration over a single dimension of a data structure. Assuming perfectly nested loops, such traversal can be interpreted as a Noarr layout and be subjected to the same transformations as a memory layout.
 
-Their extension to autotuning.
-
-
-Our approach represents loop transformations as first class objects, which can be composed to form a complex transformation. Moreover, the loop transformation can be extended as a logical view over a memory layout. Let us revisit the example of tiling from the previous section. To traverse a matrix in tiles, we can define a traversal as follows:
-A difference between layout and traversal is that traversal is represented as a set of nested loops. Let us have a simple example of copying data from row-major layout to a column-major layout. The naive loop would look like this: 
-\begin{minted}[breaklines]{c++}
-for (int i = 0; i < m; i++) {
-  for (int j = 0; j < n; j++) {   
-    column_major | get_at<'i', 'j'>(data, i, j) = row_major | get_at<'i', 'j'>(data, i, j);
-  }
-}
+Let us highlight this idea on an example of matrix multiplication, where a plain C++ implementation would look like this:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
+      for (int k = 0; k < p; k++) {
+        C[i][j] += A[i][k] * B[k][j];
+  } } }
 \end{minted}
-However, such loop is not optimal. Cache misses are generated by the innermost loop, which is not cache-friendly. To optimize the loop, one can perform tiling:
-\begin{minted}[breaklines]{c++}
-for (int i = 0; i < m / tile_m; i ++) {
-  for (int j = 0; j < n / tile_n; j ++) {
-    for (int k = 0; k < tile_m; k ++) {
-      for (int l = 0; l < tile_n; l ++) {
-        column_major | get_at<'i', 'j'>(data, i * tile_m + k, j * tile_n + l) = row_major | get_at<'i', 'j'>(data, i * tile_m + k, j * tile_n + l);
-      }
-    }
-  }
-}
+The nested loops follow the order of $3$ present dimensions: $i$, $j$ and $k$ denoting rows of $C$ and $A$, columns of $C$ and $B$, and rows of $A$ and columns of $B$ respectively. Smartly selecting the named dimensions of the layouts, the traversal can be rewritten using Noarr as follows:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  auto A = make_bag(ptr_a, scalar<int> ^ vector<'k', 'i'>(K, I));
+  auto B = make_bag(ptr_b, scalar<int> ^ vector<'j', 'k'>(J, K));
+  auto C = make_bag(ptr_c, scalar<int> ^ vector<'j', 'i'>(J, I));
+  
+  traverser(A, B, C) | [=](auto state) {
+    C[state] += A[state] * B[state];
+  };
 \end{minted}
-This is not very readable and error-prone. Noarr provides a way to define such traversal in a more readable way:
-\begin{minted}[breaklines]{c++}
-traverser(tile_m, tile_n)
-  .order(strip_mine<'i', 'i', 'k'>(tile_m) ^ strip_mine<'j', 'j', 'l'>(tile_n))
-  .for_each([=](auto state)
-  {
-    column_major | get_at(data, state) 
-      = row_major | get_at(data, state);
-  });
+
+The traverser extracts dimensions from the passed-in layouts, and yields and index space corresponding to the cartesian product of the extracted dimensions (after removing duplicates). Changing the traversal order is done by applying the proto-structures to the traverser. To reorder the loops to a more cache-friendly \mintinline{c++}{'i'}, \mintinline{c++}{'k'}, \mintinline{c++}{'j'} order, the traversal can be rewritten as follows:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  traverser(A, B, C) ^ reorder<'i', 'k', 'j'>() | [=](auto state) {
+    C[state] += A[state] * B[state];
+  };
 \end{minted}
-Here shows the power of named dimensions. The \mintinline{c++}{'i'} and \mintinline{c++}{'j'} dimensions are innermost, representing the column and row of a tile respectively. The \mintinline{c++}{'k'} and \mintinline{c++}{'l'} dimensions are outermost, representing the column and row of a matrix, whose elements are whole tiles. With such semantics, tiles are both among themselves and within in row-major format. Unsurprisingly, the inter-tile layout can be changed to column-major by a simple rewrite:
 
-There are other transformations \dots
+Some transformations change the nesting level of the underlying loops, e.g., during a strip mine transformation, where a loop is split into two nested loops by a blocking factor. Following the Noarr paradigm of naming dimensions, a strip mine is well defined by a proto-structure \mintinline[fontsize=\footnotesize]{c++}{into_blocks<InD, OutD1, OutD2>(block_size)}. Since all loops are tracked by their names, user has a full control over the output of a transformation and can safely chain multiple transformations together. A tiled matrix multiplication can be expressed as follows:
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  auto tiles = into_blocks<'i', 'I', 'i'>(noarr::lit<16>)
+  ^ into_blocks<'j', 'J', 'j'>(noarr::lit<16>)
+  ^ into_blocks<'k', 'K', 'k'>(noarr::lit<16>)
+  // using new dimensions 'I', 'J', 'K'
+  ^ reorder<'I', 'J', 'K', 'i', 'j', 'k'>(); 
 
+  traverser(A, B, C) ^ tiles | [=](auto state) {
+    C[state] += A[state] * B[state];
+  }; 
+\end{minted}
 
+With this arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. Noarr layouts and traversal library has been already field-tested and integrated into our ongoing research and we can confirm that the combination of present primitives with strongly-typed dimension semantics can alleviate the burden of explicit coding and still be helpful for writing highly performant code. We expect that our solution will add a new expressive tool to a high-performance programming toolset, simplifying the research focusing on tunings of prewritten computational kernels and building complex optimized parallel algorithms from scratch.
 
-\subsection{layout agnostic code}
+\section{Auto-tuning and parallelism}
 
-Benefits of some annotation-based tools is the ability to automatically search transformation space and find the most optimal traversal. Such \emph{autotuning} is especially useful when the code is supposed to run on different hardware. The different cache sizes or vector registers widths can be easily adapted to by the autotuning process.
-
-As first-class objects, noarr layouts and traversals allow for \emph{layout-agnostic} and \emph{traversal-agnostic} code. A code, which contains the performance critical part, such as nested for loop of a scientific algorithm, can be encapsulated in a function, with traversal and layout extracted into function parameters:
-\begin{listing}
-  \begin{minted}[fontsize=\footnotesize,linenos,breaklines]{c++}
-  template <class A_t, class B_t, class C_t, class Order_t>
-  void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
-  {
-      traverser(A, B, C).order(my_order).for_each([&](auto Aidxs, auto Bidxs, auto Cidxs)
-      {
-          C.at(Cidxs) += A.at(Aidxs) * B.at(Bidxs);
-      });
-  }
-  \end{minted}
-  \caption{Traversal-agnostic matrix multiplication}
-  \label{lst:agn}
-\end{listing}
-
-The function can be called repeatedly with a different combination of layout and traversal transformations. Benchmarking the differently parametrized functions then shows the optimal transformations on a running hardware and highlights the most effective optimizations on a general hardware.
-
-% add figure heatmap_all
+A common benefit of the aforementioned annotation-based loop transforers is the ability to automatically search the transformation space and find the most optimal traversal. Such \emph{autotuning} is especially useful when the code is supposed to run on different hardware. The different cache sizes or vector registers widths can be easily adapted to by the autotuning process. The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by specifying a layout or a traversal as a parameter of a performance-critical function. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. As an example, Figure~\ref{fig:heatmap_all} shows a performance heatmap of matrix multiplication, executed using different combination of matrices layouts.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{img/heatmap_all}
-  \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout and traversal transformations. The optimal transformation is highlighted in red.}
+  \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout and traversal transformations. The optimal transformation is highlighted in blue.}
   \label{fig:heatmap_all}
 \end{figure}
 
-The modular template-based design of this extension al-
-lows us to mimic the autotuning systems, which search the
-vast space of transformation, trying to find the most per-
-formant one for a specific computational function. In our
-approach, we may be able to express precisely that with
-so-called traversal-agnostic functions — the body of such
-functions does not change, although the traversal order does
-(see Listing 7).
+Further, Noarr is compatible with parallelism. Considering algorithms with master data structures, the parallelism is usually a question of in which nested loop are we aiming to parallelize. There can be caveats of course, such as data dependencies, but they are usually easy to spot. Noarr traversal transformations are general enough to allow custom parallelism. Nevertheless, Noarr supports parallelization wrappers around TBB and OpenMP, providing a proof of concept that the library can be extended to various parallelization backends. An example of dividing computation tasks of a Hadamard product over a threads of a single CUDA block is as follows:
 
-Our approach may promote less time spent in code compiling as we do not require to modify the source code when applying the different transformations. However, this is farfrom the scope of this paper.
+\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
+  auto my_order = merge_blocks<'i', 'j', 'a'>() 
+    ^ into_blocks<'a', 'A', 'a'>(lit<2>) 
+    ^ step<'A'>(threadIdx.x % warpSize, warpSize);
+  
+  traverser(A, B, C) ^ my_order | [=](auto state) {
+    C[state] = A[state] * B[state];
+  }; 
+\end{minted}
+
+
+% In the future, we plan to combine the proposed innovations
+% with autotuning methods. The traversal-agnostic functions
+% should provide an exciting starting point for the automated
+% exploration of various traversal orderings. Furthermore, we
+% are experimenting with using the layout-agnostic paradigm
+% with the ultimate goal of designing a self-adaptive system
+% that could change the layout of the data structures or even
+% the order of loops at runtime.
+
+
+
+% \subsection{layout agnostic code}
+
+% Benefits of some annotation-based tools is the ability to automatically search transformation space and find the most optimal traversal. Such \emph{autotuning} is especially useful when the code is supposed to run on different hardware. The different cache sizes or vector registers widths can be easily adapted to by the autotuning process.
+
+% As first-class objects, noarr layouts and traversals allow for \emph{layout-agnostic} and \emph{traversal-agnostic} code. A code, which contains the performance critical part, such as nested for loop of a scientific algorithm, can be encapsulated in a function, with traversal and layout extracted into function parameters:
+% \begin{listing}
+%   \begin{minted}[fontsize=\footnotesize,linenos,breaklines]{c++}
+%   template <class A_t, class B_t, class C_t, class Order_t>
+%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+%   {
+%       traverser(A, B, C).order(my_order).for_each([&](auto Aidxs, auto Bidxs, auto Cidxs)
+%       {
+%           C.at(Cidxs) += A.at(Aidxs) * B.at(Bidxs);
+%       });
+%   }
+%   \end{minted}
+%   \caption{Traversal-agnostic matrix multiplication}
+%   \label{lst:agn}
+% \end{listing}
+
+% The function can be called repeatedly with a different combination of layout and traversal transformations. Benchmarking the differently parametrized functions then shows the optimal transformations on a running hardware and highlights the most effective optimizations on a general hardware.
+
+% % add figure heatmap_all
+
+
+% The modular template-based design of this extension al-
+% lows us to mimic the autotuning systems, which search the
+% vast space of transformation, trying to find the most per-
+% formant one for a specific computational function. In our
+% approach, we may be able to express precisely that with
+% so-called traversal-agnostic functions — the body of such
+% functions does not change, although the traversal order does
+% (see Listing 7).
+
+% Our approach may promote less time spent in code compiling as we do not require to modify the source code when applying the different transformations. However, this is farfrom the scope of this paper.
 
 % benefits of some of annotation based tools is the ability to autotune some layout parameters
 % noarr layout agnostic abstraction allows just the same
@@ -376,7 +403,7 @@ Our approach may promote less time spent in code compiling as we do not require 
 % find sth from cgo paper
 
 
-\section{parallelism}
+% \section{parallelism}
 
 % parallelism is a different kind of beast, it can alter the traversal
 % considering algorithms with master data structures, the parallelism is usually a question of in which nested loop are we aiming to parallelize
