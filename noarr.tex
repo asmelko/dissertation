@@ -311,7 +311,7 @@ The nested loops follow the order of $3$ present dimensions: $i$, $j$ and $k$ de
   };
 \end{minted}
 
-The traverser extracts dimensions from the passed-in layouts and yields an index space corresponding to the cartesian product of the extracted dimensions (after removing duplicates). Thanks to that specific dimension naming, the index space is congruent with the layout with $3$ dimensions, iterable the same way as in the plain example.
+The traverser extracts dimensions from the passed-in layouts and yields an index space corresponding to the cartesian product of the extracted dimensions (after removing duplicates). Thanks to the dimensions naming, the index space is equivalent to the layout with $3$ dimensions \mintinline{c++}{'i'}, \mintinline{c++}{'j'} and \mintinline{c++}{'k'}, iterable in the same way as in the plain example.
 
 As a result, changing the traversal order is done the same way as modifying the layout --- by applying the proto-structures to the traverser. E.g., to reorder the loops to a more cache-friendly \mintinline{c++}{'i'}, \mintinline{c++}{'k'}, \mintinline{c++}{'j'} order, the traversal can be rewritten as follows:
 
@@ -321,13 +321,13 @@ As a result, changing the traversal order is done the same way as modifying the 
   };
 \end{minted}
 
-Some transformations change the nesting level of the underlying loops, e.g., during a strip mine transformation, where a loop is split into two nested loops by a blocking factor. Following the Noarr paradigm of naming dimensions, a strip mine is well defined by a proto-structure \mintinline[fontsize=\footnotesize]{c++}{into_blocks}, which accepts the first dimension as the input, which should be present in the layout, and two output dimension, which will be newly added to the composed layout. Since all loops are tracked by their names, the user has full control over the output of a transformation and can safely chain multiple transformations together. A tiled matrix multiplication can be expressed as follows:
+Some transformations change the nesting level of the underlying loops, e.g., during a strip-mine transformation, where a loop is split into two nested loops by a blocking factor~\cite{mckinley1996improving}. Following the Noarr paradigm of named dimensions, a strip-mine is well defined by a proto-structure \mintinline[fontsize=\footnotesize]{c++}{into_blocks}, which accepts the first dimension as the input, which should be present in the layout, and two output dimension, which will be newly added to the composed layout. Since all loops are tracked by their names, the user has full control over the output of a transformation and can safely chain multiple transformations together. A tiled matrix multiplication can be expressed as follows:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
   // breaking dimension 'i' into two new dimensions 'I' and 'x'
   auto tiles = into_blocks<'i', 'I', 'x'>(noarr::lit<16>)
   ^ into_blocks<'j', 'J', 'y'>(noarr::lit<16>)
   ^ into_blocks<'k', 'K', 'z'>(noarr::lit<16>)
-  // using new dimensions
+  // using the new dimensions
   ^ reorder<'I', 'J', 'K', 'x', 'y', 'z'>(); 
 
   traverser(A, B, C) ^ tiles | [=](auto state) {
@@ -339,26 +339,32 @@ With this arsenal of proto-structures, Noarr provides options to specify many co
 
 \section{Auto-tuning and parallelism}
 
-A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. Such \emph{autotuning} is especially useful when the code is supposed to run on different hardware. The different cache sizes or vector registers widths can be easily adapted to by the autotuning process. The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by specifying a layout or a traversal as a parameter of a performance-critical function. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. As an example, Figure~\ref{fig:heatmap_all} shows a performance heatmap of matrix multiplication, executed using different combination of matrices layouts.
+A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. This process of \emph{autotuning} is especially useful when the code is supposed to run on different hardware. As an example, the different cache sizes or vector registers widths can be easily adapted to by the autotuning process~\cite{frigo1998fftw,puschel2004spiral,whaley1998automatically}. 
+
+The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by defining a layout or a traversal as an argument of a performance-critical function. That way, a function is agnostic of the layout or traversal specified and, regardless the passed-in layout, it will result in the same operations, just in a different order. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. Listing~\ref{lst:agn} shows an example of a transformation-agnostic function written using Noarr, used to generate a performance heatmap of the benchmarked transformations (Figure~\ref{fig:heatmap_all}).
+
+\begin{listing}
+  \begin{minted}[fontsize=\footnotesize,breaklines]{c++}
+  template <class A_t, class B_t, class C_t, class Order_t>
+  void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+  {
+      traverser(A, B, C) ^ my_order | [=](auto state) {
+          C[state] += A[state] * B[state];
+      };
+  }
+  \end{minted}
+  \caption{Layout- and traversal- agnostic matrix multiplication.}
+  \label{lst:agn}
+\end{listing}
 
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{img/heatmap_all}
-  \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout and traversal transformations. The optimal transformation is highlighted in blue.}
+  \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout transformations. The optimal transformation is highlighted in blue.}
   \label{fig:heatmap_all}
 \end{figure}
 
-Further, Noarr is compatible with parallelism. Considering algorithms with master data structures, parallelism is usually a question of in which nested loop we are aiming to parallelize. There can be caveats of course, such as data dependencies, but they are usually easy to spot. Noarr traversal transformations are general enough to allow custom parallelism. Nevertheless, Noarr supports parallelization wrappers around TBB and OpenMP, providing a proof of concept that the library can be extended to various parallelization backends. An example of dividing computation tasks of a Hadamard product over threads of a single CUDA block is as follows:
-
-\begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline]{c++}
-  auto my_order = merge_blocks<'i', 'j', 'a'>() 
-    ^ into_blocks<'a', 'A', 'a'>(lit<2>) 
-    ^ step<'A'>(threadIdx.x % warpSize, warpSize);
-  
-  traverser(A, B, C) ^ my_order | [=](auto state) {
-    C[state] = A[state] * B[state];
-  }; 
-\end{minted}
+Lastly, Noarr is compatible with parallelism. Noarr proto-structures are general enough to allow division of layouts and traversals into sublayouts and subtraversals for user-guided parallelism. Moreover, Noarr supports parallelization wrappers around TBB, OpenMP and CUDA, managing the division of the specified dimensions and assigning their traversal to parallel workers automatically.
 
 
 % In the future, we plan to combine the proposed innovations
