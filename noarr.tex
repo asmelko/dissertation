@@ -337,34 +337,34 @@ Some transformations change the nesting level of the underlying loops, e.g., dur
 
 With this arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. Noarr layouts and traversal library has been already field-tested and integrated into our ongoing research and we can confirm that the combination of present primitives with strongly-typed dimension semantics can alleviate the burden of explicit coding and still be helpful for writing highly performant code. We expect that our solution will add a new expressive tool to a high-performance programming toolset, simplifying the research focusing on tunings of prewritten computational kernels and building complex optimized parallel algorithms from scratch.
 
-\section{Auto-tuning and parallelism}
+% \section{Auto-tuning and parallelism}
 
-A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. This process of \emph{autotuning} is especially useful when the code is supposed to run on different hardware. As an example, the different cache sizes or vector registers widths can be easily adapted to by the autotuning process~\cite{frigo1998fftw,puschel2004spiral,whaley1998automatically}. 
+% A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. This process of \emph{autotuning} is especially useful when the code is supposed to run on different hardware. As an example, the different cache sizes or vector registers widths can be easily adapted to by the autotuning process~\cite{frigo1998fftw,puschel2004spiral,whaley1998automatically}. 
 
-The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by defining a layout or a traversal as an argument of a performance-critical function. That way, a function is agnostic of the layout or traversal specified and, regardless the passed-in layout, it will result in the same operations, just in a different order. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. Listing~\ref{lst:agn} shows an example of a transformation-agnostic function written using Noarr, used to generate a performance heatmap of the benchmarked transformations (Figure~\ref{fig:heatmap_all}).
+% The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by defining a layout or a traversal as an argument of a performance-critical function. That way, a function is agnostic of the layout or traversal specified and, regardless the passed-in layout, it will result in the same operations, just in a different order. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. Listing~\ref{lst:agn} shows an example of a transformation-agnostic function written using Noarr, used to generate a performance heatmap of the benchmarked transformations (Figure~\ref{fig:heatmap_all}).
 
-\begin{listing}
-  \begin{minted}[fontsize=\footnotesize,breaklines]{c++}
-  template <class A_t, class B_t, class C_t, class Order_t>
-  void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
-  {
-      traverser(A, B, C) ^ my_order | [=](auto state) {
-          C[state] += A[state] * B[state];
-      };
-  }
-  \end{minted}
-  \caption{Layout- and traversal- agnostic matrix multiplication.}
-  \label{lst:agn}
-\end{listing}
+% \begin{listing}
+%   \begin{minted}[fontsize=\footnotesize,breaklines]{c++}
+%   template <class A_t, class B_t, class C_t, class Order_t>
+%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+%   {
+%       traverser(A, B, C) ^ my_order | [=](auto state) {
+%           C[state] += A[state] * B[state];
+%       };
+%   }
+%   \end{minted}
+%   \caption{Layout- and traversal- agnostic matrix multiplication.}
+%   \label{lst:agn}
+% \end{listing}
 
-\begin{figure}
-  \centering
-  \includegraphics[width=0.8\textwidth]{img/heatmap_all}
-  \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout transformations. The optimal transformation is highlighted in blue.}
-  \label{fig:heatmap_all}
-\end{figure}
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=0.8\textwidth]{img/heatmap_all}
+%   \caption{Heatmap of the execution time of a matrix multiplication algorithm with different layout transformations. The optimal transformation is highlighted in blue.}
+%   \label{fig:heatmap_all}
+% \end{figure}
 
-Lastly, Noarr is compatible with parallelism. Noarr proto-structures are general enough to allow division of layouts and traversals into sublayouts and subtraversals for user-guided parallelism. Moreover, Noarr supports parallelization wrappers around TBB, OpenMP and CUDA, managing the division of the specified dimensions and assigning their traversal to parallel workers automatically.
+% Lastly, Noarr is compatible with parallelism. Noarr proto-structures are general enough to allow division of layouts and traversals into sublayouts and subtraversals for user-guided parallelism. Moreover, Noarr supports parallelization wrappers around TBB, OpenMP and CUDA, managing the division of the specified dimensions and assigning their traversal to parallel workers automatically.
 
 
 % In the future, we plan to combine the proposed innovations
