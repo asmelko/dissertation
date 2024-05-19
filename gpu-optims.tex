@@ -35,17 +35,36 @@ If we generalize a centroid of a cluster to a probability distribution, Definiti
     \delta_\text{Maha}(P,Q) = \frac{d_\text{Maha}(\bar{P},Q) + d_\text{Maha}(\bar{Q},P)}{2}
 \end{equation}\label{eq01:maha_linkage}
 
-To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipses are alongside rather than in a prolongation of one another~\cite{dagnelie1991using} (see Figure~\ref{fig:ellipses}). 
-Only when the objects of a cluster form a spherical shape, this dissimilarity measure is proportional to the Euclidean distance with a corresponding linkage.
+To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipses are alongside rather than in a prolongation of one another~\cite{dagnelie1991using}. 
+Only when the objects of a cluster form a spherical shape, this dissimilarity measure is proportional to the Euclidean distance with a corresponding linkage (see Figure~\ref{fig:ellipses}).
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.6\textwidth]{img/ellipses.pdf}
-    \caption{Two pairs of clusters with different similarities according to Mahalanobis distance \cite{vsmelko2020gpu}}
+    \includegraphics[width=0.8\textwidth]{img/maha.drawio.pdf}
+    \caption{The comparison of the Mahalanobis (left) and Euclidean (right) distance in the context of elliptic clusters. The contour lines represent the space of the equal distance from the cluster centroid.}
     \label{fig:ellipses}
 \end{figure}
 
+Finally, Algorithm~\ref{alg01:maha} summarizes the Hierarchical Clustering (HC) with Mahalanobis linkage. Line~2 initiates $n-1$ iterations, each one starting with one less cluster to merge. Denoting $d$ as the dimension of the data, the time complexity of the Mahalanobis distance computation is $\mathcal{O}(d^2)$, according to the Equation~\ref{eq01:maha} and the fact, that the size of a covariance matrix is $d \times d$. The time complexity of the covariance matrix computation is $\mathcal{O}(d^2 \cdot c)$, where $c$ is the size of a cluster, and its inverse is computed in $\mathcal{O}(d^3)$. 
 
+The standard HC, which utilizes a dissimilarity matrix, has a time complexity of $\mathcal{O}(n^3)$ and space complexity of $\mathcal{O}(n^2)$. There are other variants of HC, which influence the closest cluster pair retrieval and the amount of distances to recompute after each iteration. There are for example HC with the nearest neighbor array, which trades the linear memory complexity for a worse time complexity on average, or the HC with priority queues, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$ for the sake of bigger memory requirements~\cite{day1984efficient}. 
+
+\begin{algorithm}[t]
+    \caption{Mahalanobis Hierarchical Clustering Analysis}
+    \label{alg01:maha}
+    \begin{algorithmic}[1]
+        \Procedure{MHCA}{Set of clusters $C = \{c_1, \dots, c_n\}$, dimension $d\in\N$}
+        \While {$|C| > 1$}
+            \For {all cluster pairs $(c_i, c_j)$}
+                \State Compute $\delta_\text{Maha}(c_i,c_j)$ \Comment{Time: $\mathcal{O}(d^2)$}
+            \EndFor
+            \State Find the closest pair of clusters $(a, b)$
+            \State Update $C$ by merging $a$ and $b$ into $c$
+            \State Compute $\cov^{-1}(c)$ \Comment{Time: $\mathcal{O}(d^2 \cdot |c| + d^3)$}
+        \EndWhile
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
 
 % We analyzed datasets with n = 10^4 events as the distance of data points requires O(n2) space in memory, and therefore, it becomes impractical (or even impossible) to analyze bigger datasets on current desktop computers.
 
@@ -85,11 +104,11 @@ Only when the objects of a cluster form a spherical shape, this dissimilarity me
 
 
 
-From the perspective of GPU programming, Mahalanobis Hierarchical Clustering (HC) is a challenging problem. Algorithms with a high memory requirements are generally unfavorable for GPUs due to their limited DRAM. There has been a lot of work on overcoming this limitation, both from NVIDIA and the scientific community~\cite{zheng2016towards,kim2020batch,landaverde2014investigation}. CUDA has introduced \emph{unified memory}~\cite{site:cuda}, which allowed GPUs to work on data that exceeds GPU memory capacity by seamlesly copying data from CPU to GPU on page fault. This optimization can help only to a certain extent, as it can only scale to the size of CPU RAM and the data are usually sent through high-latency small-throughput interconnect. Therefore, in our work we experimented with other well-known HC variants which trade higher asymptotic time complexity for a linear memory complexity --- \emph{HC with the nearest neighbor array}~\cite{day1984efficient}. 
+From the perspective of GPU programming, Mahalanobis HC is a challenging problem. Algorithms with a high memory requirements are generally unfavorable for GPUs due to their limited DRAM. There has been a lot of work on overcoming this limitation, both from NVIDIA and the scientific community~\cite{zheng2016towards,kim2020batch,landaverde2014investigation}. CUDA has introduced \emph{unified memory}~\cite{site:cuda}, which allowed GPUs to work on data that exceeds GPU memory capacity by seamlesly copying data from CPU to GPU on page fault. This optimization can help only to a certain extent, as it can only scale to the size of CPU RAM and the data are usually sent through high-latency small-throughput interconnect. Therefore, in our work we experimented with other well-known HC variants which trade higher time complexity for a linear memory complexity --- \emph{HC with the nearest neighbor array}~\cite{day1984efficient}. 
 % Furthermore, the execution on the real-world flow cytometry data showed that the average cost of the nearest neighbor array update is much lower than the worst case.
 
 
-The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot-spot becomes the computation of the covariance matrix of a merged cluster, which has a time complexity of $\mathcal{O}(d^2 \cdot c)$, where $d$ is the number of dimensions of the data and $c$ is the size of the cluster. As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload which uses CUDA \emph{streams}~\cite{site:cuda}, which are CUDA constructs that enable high-level GPU task parallelism, such as overlapping the execution of mutliple GPU kernels and memory transfers. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
+The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot-spot becomes the computation of the covariance matrix of a merged cluster (Algorithm~\ref{alg01:esom}, Line~8). As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload which uses CUDA \emph{streams}~\cite{site:cuda}, which are CUDA constructs that enable high-level GPU task parallelism, such as overlapping the execution of mutliple GPU kernels and memory transfers. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
 
 \subsection{Results}
 
@@ -145,7 +164,7 @@ Algorithm~\ref{alg01:esom} shows the overview of EmbedSOM. It assumes a set of $
     \end{algorithmic}
 \end{algorithm}
 
-With such a description of the algorithm, we can deduce the time complexity for a single data point processing: The first line of the for loop is the well-known $k$-NN problem, with the optimal time complexity of $\mathcal{O}(d \cdot g \cdot \log k)$. The remainder, which we may call the embedding step, has a time complexity of $\mathcal{O}(d \cdot k^2)$. Since it holds that $k < g << n$, EmbedSOM achieves sufficient scaling; the embedding of $24$ million cells with $36$ markers can finish under an hour on common hardware, compared to around $2$ days using UMAP~\cite{kratochvil2019som}.
+With such a description of the algorithm, we can deduce the time complexity for a single data point processing: The first line of the for loop is the well-known $k$-NN problem, with the optimal time complexity of $\mathcal{O}(d \cdot g \cdot \log k)$. The remainder, which we may call the embedding step, has a time complexity of $\mathcal{O}(d \cdot k^2)$. Since it holds that $k < g << n$, EmbedSOM achieves sufficient scaling; the embedding of $24$ million cells with $36$ markers can finish under an hour on common hardware, compared to around $2$ days using UMAP~\cite{kratochvil2019som}. Figure~\ref{fig:embedsom} visualizes the EmbedSOM process.
 
 \begin{figure}[h]
     \centering
@@ -341,16 +360,28 @@ The final implementation of the cross-correlation algorithm achieved a speedup o
 
 In Systems biology, the analysis of large and complex biological systems is a challenging task. \emph{Boolean models}~\cite{wang2012boolean} have gained popularity due to their simplicity, scalability, and ability to describe complex signaling networks. A Boolean model consists of $n$ nodes with binary values --- active or inactive. A node represents an event in the system, such as a gene being expressed or a protein being activated. The complete state of the system is, therefore, defined by a boolean word composed of $n$ bits. The states can transition within each other based on $n$ Boolean formulae, one for each node. Given an initial state, the task of the model is to predict the probability distribution of system outcomes after a specified amount of time.
 
-Numerical methods, such as ExaStoLog~\cite{koltai2020exact}, have been developed and used to solve Boolean models; however, they are limited to relatively small models (tens of nodes) due to the exponential memory requirements. For larger models, it has proved to be much more efficient to approximate the results by simulation. A C++ software, MaBoSS~\cite{stoll2017maboss}, simulates these systems by applying the kinetic Monte-Carlo algorithm~\cite{stoll2012continuous} on the Boolean network. In summary, the MaBoSS tool simulates millions of random walks (also called the \emph{trajectories}) on the state space of the Boolean network (a directed weighted graph), which are then aggregated to compute the probability distribution of the states over a time window (see Figure~\ref{fig:maboss}).
+Numerical methods, such as ExaStoLog~\cite{koltai2020exact}, have been developed and used to solve Boolean models; however, they are limited to relatively small models (tens of nodes) due to the exponential memory requirements. For larger models, it has proved to be much more efficient to approximate the results by simulation. A C++ software, MaBoSS~\cite{stoll2017maboss}, simulates these systems by applying the kinetic Monte-Carlo algorithm~\cite{stoll2012continuous} on the Boolean network. In summary, the MaBoSS tool simulates millions of random walks (also called the \emph{trajectories}) on the state space of the Boolean network (a directed weighted graph). Algorithm~\ref{alg:iter} shows in a higher-level how a trajectory is sampled. The trajectories are then aggregated in a histogram-like fashion to compute various statistics, such as the probability distribution of the states over time, as is shown on Figure~\ref{fig:maboss}.
+
+\begin{algorithm}
+    \caption{A single iteration of the MaBoSS simulation of a trajectory, given the trajectory state $S$ at time $t$.}
+    \label{alg:iter}
+    \begin{algorithmic}[1]
+    \Procedure{TrajectorySimulationStep}{S, t}
+    \State Compute transition probabilities $p_1, \dots, p_n$ by evaluating the Boolean formulae $\mathcal{B}_1, \dots, \mathcal{B}_n$ on $S$
+    \State Sample the next state $S'$ and transition time $\Delta t$ according to the probabilities $p_1, \dots, p_n$
+    \State \Return $S'$, $t + \Delta t$ 
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+Due to the stochastic nature, this approach can overcome the limitations of numerical methods and has enabled the analysis of bigger models, running instances with a few hundred nodes in a reasonable amount of time. On the other hand, allowing even bigger inputs would require billions of simulated trajectories in order to obtain a reliable result, which puts significant pressure on the tool and its ability to scale well. A parallel CPU MaBoSS simulation of a relatively small Sizek model~\cite{sizek2019boolean} ($n=93$) with $10^6$ trajectories takes the order of minutes on a high-end computer. Simulating models with thousands of nodes and billions of trajectories would require an order of days in runtime, hindering further analysis of the models.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{img/mabossg-kernels.drawio.png}
+    \includegraphics[width=\textwidth]{img/mabossg-kernels.drawio.pdf}
     \caption{The MaBoSS projection of simulated trajectories averaged over a specific time window.}
     \label{fig:maboss}
 \end{figure}
-
-Due to the stochastic nature, this approach can overcome the limitations of numerical methods and has enabled the analysis of bigger models, running instances with a few hundred nodes in a reasonable amount of time. On the other hand, allowing even bigger inputs would require billions of simulated trajectories in order to obtain a reliable result, which puts significant pressure on the tool and its ability to scale well. A parallel CPU MaBoSS simulation of a relatively small Sizek model~\cite{sizek2019boolean} ($n=93$) with $10^6$ trajectories takes the order of minutes on a high-end computer. Simulating models with thousands of nodes and billions of trajectories would require an order of days in runtime, hindering further analysis of the models.
 
 Another performance challenge is the so-called \emph{mutant analysis}. In an existing model, a node is \emph{mutated} to a static value, losing the ability to change its state. This technique is used to predict the effect of a gene knockout or overexpression. During the analysis, the same model is run $2n$ times to gain the predictions of each single mutation (both suppressed and expressed). Naturally, this sort of analysis is even more expensive. As a result, the analysis of double or triple mutants (where multiple nodes are mutated at once) has been subjected to a supercomputer-level task.
 
