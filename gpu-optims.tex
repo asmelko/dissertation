@@ -27,57 +27,124 @@ This chapter enumerates four selected scientific algorithms and discusses their 
 \section{Introduction to GPU programming}
 
 
-Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they were used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures or computing geometry, from the CPU.
+Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they were used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms than ordinary CPUs. GPU chip semantic is oriented on high performance achieved by immense parallelism, with a design which promotes its further scalability. Its die surface is largly occupied by compute cores with very little space dedicated to cache and control, which contradics the CPU design (see Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it~\cite{navarro2014survey}.
 
-And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms than ordinary CPUs. GPU chip semantic is oriented on high performance achieved by immense parallelism, with a design which promotes its further scalability. Its die surface is largly occupied by compute cores with very little space dedicated to cache and control, which contradics the CPU design. Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it.
-
-The shift from specialized graphics processing to general-purpose computing was marked by the development of programming frameworks such as NVIDIA's CUDA (Compute Unified Device Architecture) and OpenCL (Open Computing Language) by Kronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
+The shift from specialized graphics processing to general-purpose computing was marked by the development of programming frameworks such as CUDA (Compute Unified Device Architecture) by NVIDIA and OpenCL (Open Computing Language) by Khronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming~\cite{croix2009introduction}. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
 
 \subsection{GPU Architecture and Programming Model}
 
-Generally, the relation between GPU hardware architecture and its programming model is that the model serves as a high-level abstraction of the hardware, allowing to write a code that can run disregarding the underlying GPU. Depending on the programming framework or GPU vendor, the terminology within the model varies, but the core concepts remain the same. For simplicity, we will describe programming model in CUDA terms.
+Generally, a programming model serves as a high-level abstraction of the hardware architecture, allowing programmers to write code that can run and scale well without the prior knowledge of the underlying hardware specifics. Depending on the programming framework or GPU vendor, the terminology within the model varies, but the core concepts remain the same. For simplicity, we will continue with the description in CUDA terms.
 
-From hardware perspective, GPU cores are organized into \emph{Streaming Multiprocessors} (SMs). Each SM consists of compute units, a register file and L1 cache also called \emph{shared memory}. A GPU has multiple SMs (nowadays hundreds), each capable of executing tens of parallel threads. All SMs are connected via a high-speed interconnect to the GPU's memory, called \emph{global memory}.
+The main building block of GPU hardware architecture are \emph{Streaming Multiprocessors} (SMs). SM encouples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory} and it is able to independently schedule threads. A GPU consists of multiple SMs, high end cards reaching up to hundred SMs. All SMs are connected via a high-speed interconnect to the GPU's memory, called \emph{global memory}. Figure~\ref{fig:sm} shows a diagram of a single streaming multiprocessor.
 
-The abstraction of this highly-parallel architecture is based on organizing threads into hierarchical levels. The basic unit of execution is a \emph{thread}, which is a single instance of the code running on the GPU. Threads are organized into \emph{blocks}, which are groups of threads that are executed on the same SM. Finally, a group of blocks, which are executed independently on multiple SMs, is called \emph{grid}. A grid completely defines the amount of concurrent work for a specified function to be executed on a GPU (also called a \emph{kernel}).
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.9\textwidth]{img/cpu-gpu}
+        \caption{Comparison of CPU and GPU chip design~\cite{site:cuda}.}
+        \label{fig:cpu-gpu}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{img/sm}
+        \caption{Diagram of a streaming multiprocessor~\cite{navarro2014survey}.}
+        \label{fig:sm}
+	\end{subfigure}
+\end{figure}
 
-Conceptually, the GPU programming model is based on \emph{Single Instruction, Multiple Data} (SIMD) architecture, where a single instruction is executed on multiple data streams. In practise, a SM issues threads in groups of 32, \emph{warps}, which execute in \emph{lockstep} --- performing the same instruction at once. Other sources refer to this as \emph{Single Instruction, Multiple Threads} (SIMT) architecture, which is a more accurate description of the GPU execution model.
+The abstraction of this highly-parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, which are groups of threads that are executed on the same SM, sharing a register file and L1 cache. Finally, a group of blocks, that is executed independently on multiple SMs, is called a \emph{grid}. A grid, as depicted on Figure~\ref{fig:grid}, defines the amount (and also the dimensionality) of concurrent work to be done on a GPU. Figure~\ref{fig:grid-sm} shows how the hierarchy of threads maps to GPU hardware, abstracting away the details of the hardware architecture in the process.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+        \includegraphics[width=0.8\textwidth]{img/grid}
+        \caption{GPU grid and block organization~\cite{site:cuda}.}
+        \label{fig:grid}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+        \includegraphics[width=0.6\textwidth]{img/grid-sm}
+        \caption{The assignment of blocks in a grid to SMs on various GPUs~\cite{site:cuda}.}
+        \label{fig:grid-sm}
+	\end{subfigure}
+\end{figure}
+
+Conceptually, this programming model is based on \emph{Single Instruction, Multiple Data} (SIMD) architecture, which is a type of parallel processing where a single instruction is executed on multiple data streams. In practise, SM issues threads in groups of $32$, called \emph{warps}, which execute in \emph{lockstep} --- all performing the same instruction at once. A more accurate description of this type of processing is \emph{Single Instruction, Multiple Threads} (SIMT), which is nowadays used to describe the GPU programming model.
 
 Naturally, such programming model favors data-parallel problems, consisting of the same independent computation on a large dataset. 
 
 \subsection{Optimizing GPU performance}
 
-Thankfully, contemporary GPU devices are becoming increasingly sophisticated and are equipped with variety of control-flow mechanisms, interthread communication, atomic instruction and others. This allows for a wider range of problems to be solved on GPUs. However, applying these features correctly is not trivial and requires a deep understanding of the GPU architecture and programming model. Thus, achieving optimal performance on a GPU requires a careful consideration of various aspects. We detail the most important problems to put in the consideration when optimizing GPU code.
+Contemporary GPU devices are becoming increasingly sophisticated and are equipped with variety of control-flow mechanisms, interthread communication, atomic instruction and others, which allows for a wider range of problems to be solved on GPUs. However, applying these features correctly is not a trivial task as it requires a deep understanding of the architecture and programming model. Thus, achieving optimal performance on a GPU requires a careful consideration of various aspects. Let us detail the most important ones to put in the consideration when optimizing GPU code~\cite{pratx2011gpu}.
 
 \subsubsection{Arithmetic intensity}
 
-The achievable performance of contemporary high-end GPUs is nowadays counted in teraflops (trillions of floating-point operations per second). However, to determine the actual performance, the memory badwidth needs to be consideres, which, simply put, can not feed the cores with data at the same rate as they can compute. A helpful metric to consider here is \emph{ops-per-byte} ratio, which is computed as the ratio of math and memory bandwidth and determines how many math operations need to be executed per transfered byte to achieve the maximum performance. For example, NVIDIA V100 GPU has a peak single-precision floating point bandwidth of $14$ teraflops while memory bandwidth only $900$GB/s. This results in ops-per-byte ratio of $\frac{14}{0.9} \approx 15$. Therefore, a kernel that performs less than $60$ single-precision floating point operations per $4$-byte load/store will be memory bound. This ratio of math operations to memory operations is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
+The peak performance of contemporary high-end GPUs is nowadays counted in TFLOPS (trillions of floating-point operations per second). In order to determine the actual achievable performance of a program, almost always the memory badwidth needs to be considered. Comparing peak performance and memory bandwidth of current GPU, we swiftly conclude that the cores can not be fed with data at the same rate as they can compute. 
 
-ops-per-byte
-roofline model
-arithmetic intensity
+Therefore, one of the most important constants in GPU programming is \emph{ops-per-byte} ratio. It is computed as the ratio of math and memory bandwidth and it simply determines how many math operations per transferred byte must be executed to theoretically achieve the maximum performance. For example, NVIDIA V100 GPU achieves $14$ TFLOPS peak single-precision performance with memory bandwidth of $900$ GB/s. This results $\frac{14}{0.9} \approx 15$ ops-per-byte ratio. As a result, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
+
+To get more detail in hardware utilization than just comparing ops-per-byte ratio with arithmetic intensity, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity. Figure~\ref{fig:roof} shows an example of a roofline diagram, where x-axis and y-axis represent the arithmetic intensity and the performance, respectively. The horizontal lines represent achievable performance of single- and double-precision floating-point operations, and the diagonal line represents the memory bandwidth. The roofline model can be used to determine the performance bottlenecks of a program and to guide optimization efforts. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/roofline.png}
+    \caption{Example of a roofline diagram from NSight Compute profiler.}
+    \label{fig:roof}
+\end{figure}
 
 \subsubsection{Memory hierarchy}
 
-Another GPU aspect, which is directly linked to arithmetic intensity is the memory hierarchy. The global off-chip memory has the highest latency and the lowest bandwidth. Fetching data from global memory takes hundreds of cycles, whereas on-chip shared memory can be accessed a magnitute faster. In an extreme case, an optimized program can utilize a rather big register file as a cache, with virtually zero latency. The key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work such that threads in a block can utilize shared memory.
+A GPU thread hierarchy is directly followed by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. Depending on the desired level of data sharing within thread hierarchy, programmers can use various types fo memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory, altough with capacity in hundreds of kB, can be accessed a magnitude faster than global memory. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with virtually zero latency. 
 
-Also, since ops-per-byte ratio is inversly proportional to the memory bandwidth, the arithmetic intensitiy of a program using a shared memory does not have to be that high to achieve the maximum performance.
+To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since ops-per-byte ratio is inversly proportional to the memory bandwidth, a program using shared memory or registers does not have such big requirements on arithmetic intensity to achieve the maximum performance.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{img/mem-hierarchy-2.png}
+    \caption{A thread hierarchy of GPU (left) and its corresponding memory hierarchy (right)~\cite{site:cuda}.}
+    \label{fig:mem-hierarchy}
+\end{figure}
 
 \subsubsection{Memory coalescing}
 
-When accessing global memory is unavoidable, it is important to consider the memory coalescing to not further hinder the memory bandwidth. GPUs service memory requests in $128$B wide transactions of continuous data. In order to achieve the maximum bandwidth, the memory accesses of threads should minimize the number of transactions they generate. This can be achieved when accesses of threads in a warp coalesce to access aligned continuous memory locations.
+Fetching data from global memory is serviced in $128$-byte wide transactions. If a thread requests a single byte, the GPU will fetch the whole $128$-byte chunk, wasting the memory bandwidth on data that will never be read and negatively impacting ops-per-byte ratio. To utilize the memory bandwidth fully, the accumulated memory accesses of a warp lockstep should coalesce into a continuous memory locations (see Figure~\ref{fig:coal}).
 
-Accesses to data structures need to be ordered in a serial fashion.
-row-col matrix, linked-list
+In practise, this aspect needs to be considered when choosing data structures layouts, such that the memory accesses are ordered in a serial fashion (such as using column-major matrix in matrix multiplication or avoiding linked-lists). 
 
-\subsubsection{Host-device transfers}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{img/coal1}
+    \caption{Coalesced memory accesses~\cite{site:cuda}.}
+    \label{fig:coal}
+\end{figure}
 
-The data transfers between the host and the device are a significant bottleneck in GPU programming. The PCIe bus, which is used to transfer data between the CPU and the GPU, has a much lower bandwidth than the GPU's memory. Therefore, it is important to minimize the number of data transfers between the host and the device. 
-In true data-parallel algorithms, this is not a problem. Can be perfectly overlapped. This can be achieved by overlapping the data transfers with computation, using pinned memory, or by using the \emph{Unified Memory} feature of CUDA, which allows the GPU to access the CPU's memory directly.
+\subsubsection{CPU--GPU data transfers}
+
+Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth than the GPU memory. Therefore, it is important to minimize the number of data transfers between the host and the device. 
+
+In true data-parallel algorithms, these data transfers can be overlapped with computation, as depicted on Figure~\ref{fig:transfer}. Such overlapping is possible thanks to multiple execution queues on the GPU, which can be manually filled by using \emph{streams} abstraction.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{img/host-device-cpy.png}
+    \caption{Time diagram of non-overlapped (top) and overlapped (bottom) transfer and computation~\cite{site:cuda}.}
+    \label{fig:transfer}
+\end{figure}
 
 \subsubsection{Thread divergence}
 
-One downside of the highly-concurrent hardware architecture is that diverging execution paths are punished by serialization. It is important to avoid branching of threads within a warp as much as possible. Branches can be mitigated by lifting them to block or grid level, where the diverging threads can be executed in parallel. Sometimes, branches can be replaced by equivalent arithmetic operations. Loop unrolling.
+The downside of the highly-parallel SIMT architecture is handling diverging execution paths in the code. If threads in a warp take different \texttt{if} or \texttt{switch} branches, the execution of these branches will be serialized, as depicted in Figure~\ref{fig:divergence}.
+
+To keep the number of active threads high for the most amount of time, intra-warp branching should be avoided. This can be achieved by lifting the branching to inter-warp level, replacing branches with arithmetic operations if possible, or by unrolling loops.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/divergence.png}
+    \caption{An example of diverging code with a diagram how warp threads would be scheduled~\cite{site:volta}.}
+    \label{fig:divergence}
+\end{figure}
 
 \subsubsection{Thread occupancy}
 
