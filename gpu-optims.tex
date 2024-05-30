@@ -31,11 +31,11 @@ Graphics Processing Units (GPUs) have evolved from specialized hardware designed
 
 The shift from specialized graphics processing to general-purpose computing was marked by the development of programming frameworks such as CUDA (Compute Unified Device Architecture) by NVIDIA and OpenCL (Open Computing Language) by Khronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming~\cite{croix2009introduction}. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
 
-\subsection{GPU Architecture and Programming Model}
+\subsection{GPU Hardware Architecture and Programming Model}
 
-Generally, a programming model serves as a high-level abstraction of the hardware architecture, allowing programmers to write code that can run and scale well without the prior knowledge of the underlying hardware specifics. Depending on the programming framework or GPU vendor, the terminology within the model varies, but the core concepts remain the same. For simplicity, we will continue with the description in CUDA terms.
+Generally, a programming model serves as a high-level abstraction of the hardware architecture, allowing programmers to write code that can run and scale well without the prior knowledge of the underlying hardware specifics. Depending on the programming framework or GPU vendor, the terminology within the model varies, but the core concepts remain the same. To be concise, we continue with the description in CUDA terms.
 
-The main building block of GPU hardware architecture are \emph{Streaming Multiprocessors} (SMs). SM encouples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory} and it is able to independently schedule threads. A GPU consists of multiple SMs, high end cards reaching up to hundred SMs. All SMs are connected via a high-speed interconnect to the GPU's memory, called \emph{global memory}. Figure~\ref{fig:sm} shows a diagram of a single streaming multiprocessor.
+Let us start with the hardware. The main building blocks of a GPU are \emph{Streaming Multiprocessors} (SMs). From a diagram in Figure~\ref{fig:sm}, we can see that SM encouples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory} and it is able to independently schedule threads. There are multiple SMs in a GPU, their number highly corrolating with a GPU cost --- more high-end the GPU, more SMs it holds. All SMs are connected via a high-speed interconnect to the GPU's memory, the \emph{global memory}.
 
 \begin{figure}[h]
 	\centering
@@ -53,7 +53,7 @@ The main building block of GPU hardware architecture are \emph{Streaming Multipr
 	\end{subfigure}
 \end{figure}
 
-The abstraction of this highly-parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, which are groups of threads that are executed on the same SM, sharing a register file and L1 cache. Finally, a group of blocks, that is executed independently on multiple SMs, is called a \emph{grid}. A grid, as depicted on Figure~\ref{fig:grid}, defines the amount (and also the dimensionality) of concurrent work to be done on a GPU. Figure~\ref{fig:grid-sm} shows how the hierarchy of threads maps to GPU hardware, abstracting away the details of the hardware architecture in the process.
+The abstraction of this highly-parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, which are groups of threads that are executed on the same SM, sharing a register file and the shared memory. Lastly, a group of blocks, that is executed independently on multiple SMs, is called a \emph{grid}. Thus, the grid, as depicted on Figure~\ref{fig:grid}, defines the amount (and also the dimensionality) of concurrent work to be done on a GPU. Figure~\ref{fig:grid-sm} shows how the hierarchy of threads maps to GPU hardware, abstracting away the details of the hardware architecture in the process.
 
 \begin{figure}[h]
 	\centering
@@ -81,11 +81,11 @@ Contemporary GPU devices are becoming increasingly sophisticated and are equippe
 
 \subsubsection{Arithmetic intensity}
 
-The peak performance of contemporary high-end GPUs is nowadays counted in TFLOPS (trillions of floating-point operations per second). In order to determine the actual achievable performance of a program, almost always the memory badwidth needs to be considered. Comparing peak performance and memory bandwidth of current GPU, we swiftly conclude that the cores can not be fed with data at the same rate as they can compute. 
+The peak performance of contemporary high-end GPUs is nowadays counted in TFLOPS (trillions of floating-point operations per second). In order to determine the actual achievable performance of a program, virtually always the memory badwidth needs to be considered. Comparing peak performance and memory bandwidth of current GPU, we quickly conclude that the cores can not be fed with data at the same rate as they can compute. 
 
-Therefore, one of the most important constants in GPU programming is \emph{ops-per-byte} ratio. It is computed as the ratio of math and memory bandwidth and it simply determines how many math operations per transferred byte must be executed to theoretically achieve the maximum performance. For example, NVIDIA V100 GPU achieves $14$ TFLOPS peak single-precision performance with memory bandwidth of $900$ GB/s. This results $\frac{14}{0.9} \approx 15$ ops-per-byte ratio. As a result, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
+Therefore, one of the most important constants in GPU programming is \emph{ops-per-byte} ratio. It is computed as the ratio of math and memory bandwidth and it simply determines how many math operations per transferred byte must be executed to achieve the theoretical maximum performance. For example, NVIDIA V100 GPU achieves $14$ TFLOPS peak single-precision performance with memory bandwidth of $900$ GB/s. This results $\frac{14}{0.9} \approx 15$ ops-per-byte ratio. As a simple rule of thumb, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
 
-To get more detail in hardware utilization than just comparing ops-per-byte ratio with arithmetic intensity, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity. Figure~\ref{fig:roof} shows an example of a roofline diagram, where x-axis and y-axis represent the arithmetic intensity and the performance, respectively. The horizontal lines represent achievable performance of single- and double-precision floating-point operations, and the diagonal line represents the memory bandwidth. The roofline model can be used to determine the performance bottlenecks of a program and to guide optimization efforts. 
+To get more detail in hardware utilization than just comparing ops-per-byte ratio with arithmetic intensity, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity. Figure~\ref{fig:roof} shows an example of a roofline diagram, where x and y axes represent the arithmetic intensity and the performance, respectively. The horizontal lines represent achievable performance of single- and double-precision floating-point operations, and the diagonal line represents the memory bandwidth. The roofline model can be used to determine the performance bottlenecks of a program and to guide optimization efforts. 
 
 \begin{figure}
     \centering
@@ -96,7 +96,7 @@ To get more detail in hardware utilization than just comparing ops-per-byte rati
 
 \subsubsection{Memory hierarchy}
 
-A GPU thread hierarchy is directly followed by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. Depending on the desired level of data sharing within thread hierarchy, programmers can use various types fo memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory, altough with capacity in hundreds of kB, can be accessed a magnitude faster than global memory. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with virtually zero latency. 
+A GPU thread hierarchy is directly followed by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. Depending on the desired level of data sharing within thread hierarchy, programmers can use various types fo memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed a magnitude faster than global memory, altough with capacity in hundreds of kB. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with virtually zero latency. 
 
 To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since ops-per-byte ratio is inversly proportional to the memory bandwidth, a program using shared memory or registers does not have such big requirements on arithmetic intensity to achieve the maximum performance.
 
@@ -111,7 +111,7 @@ To sum up, the key to achieving high performance on a GPU is to minimize global 
 
 Fetching data from global memory is serviced in $128$-byte wide transactions. If a thread requests a single byte, the GPU will fetch the whole $128$-byte chunk, wasting the memory bandwidth on data that will never be read and negatively impacting ops-per-byte ratio. To utilize the memory bandwidth fully, the accumulated memory accesses of a warp lockstep should coalesce into a continuous memory locations (see Figure~\ref{fig:coal}).
 
-In practise, this aspect needs to be considered when choosing data structures layouts, such that the memory accesses are ordered in a serial fashion (such as using column-major matrix in matrix multiplication or avoiding linked-lists). 
+In practise, the fact whether a memory is transfered in an optimal number of transaction is directly influenced by the layout of the used data structures. One of plethora of examples may include using column-major matrix in matrix multiplication or avoiding usage of linked lists.
 
 \begin{figure}
     \centering
@@ -122,14 +122,14 @@ In practise, this aspect needs to be considered when choosing data structures la
 
 \subsubsection{CPU--GPU data transfers}
 
-Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth than the GPU memory. Therefore, it is important to minimize the number of data transfers between the host and the device. 
+Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth even than the GPU global memory. Therefore, it is important to avoid redundant data transfers between the host and the device. 
 
-In true data-parallel algorithms, these data transfers can be overlapped with computation, as depicted on Figure~\ref{fig:transfer}. Such overlapping is possible thanks to multiple execution queues on the GPU, which can be manually filled by using \emph{streams} abstraction.
+In true data-parallel algorithms, this is generally not a big issue because these data transfers can be overlapped with computation. Such overlapping is possible by GPU \emph{hardware queues}, which allow the execution of multiple programs as well as CPU--GPU memory transfers in parallel. This hardware feature is revealed by \emph{streams}, which are software abstractions of these queues. In an ideal scenario, one would use multiple streams to overlap $3$ main operations always present when programming on GPUs: CPU--GPU transfer, GPU computation, and GPU--CPU transfer (see Figure~\ref{fig:transfer}).
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.6\textwidth]{img/host-device-cpy.png}
-    \caption{Time diagram of non-overlapped (top) and overlapped (bottom) transfer and computation~\cite{site:cuda}.}
+    \includegraphics[width=0.6\textwidth]{img/C2050Timeline-1024x670.png}
+    \caption{Time diagram of non-overlapped (top) and overlapped (bottom) transfer and computation~\cite{site:stream}.}
     \label{fig:transfer}
 \end{figure}
 
