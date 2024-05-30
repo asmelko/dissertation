@@ -41,7 +41,7 @@ Let us start with the hardware. The main building blocks of a GPU are \emph{Stre
 	\centering
 	\begin{subfigure}{.5\textwidth}
         \centering
-        \includegraphics[width=0.9\textwidth]{img/cpu-gpu}
+        \includegraphics[width=\textwidth]{img/cpu-gpu}
         \caption{Comparison of CPU and GPU chip design~\cite{site:cuda}.}
         \label{fig:cpu-gpu}
 	\end{subfigure}%
@@ -76,10 +76,12 @@ Conceptually, this programming model is based on \emph{Single Instruction, Multi
 Naturally, such programming model favors data-parallel problems, consisting of the same independent computation on a large dataset. 
 
 \subsection{Optimizing GPU performance}
+\label{sec:gpu_optim}
 
 Contemporary GPU devices are becoming increasingly sophisticated and are equipped with variety of control-flow mechanisms, interthread communication, atomic instruction and others, which allows for a wider range of problems to be solved on GPUs. However, applying these features correctly is not a trivial task as it requires a deep understanding of the architecture and programming model. Thus, achieving optimal performance on a GPU requires a careful consideration of various aspects. Let us detail the most important ones to put in the consideration when optimizing GPU code~\cite{pratx2011gpu}.
 
 \subsubsection{Arithmetic intensity}
+\label{sec:arithmetic_int}
 
 The peak performance of contemporary high-end GPUs is nowadays counted in TFLOPS (trillions of floating-point operations per second). In order to determine the actual achievable performance of a program, virtually always the memory badwidth needs to be considered. Comparing peak performance and memory bandwidth of current GPU, we quickly conclude that the cores can not be fed with data at the same rate as they can compute. 
 
@@ -94,9 +96,14 @@ To get more detail in hardware utilization than just comparing ops-per-byte rati
     \label{fig:roof}
 \end{figure}
 
-\subsubsection{Memory hierarchy}
+Strictly speaking, are two ways how to decrease the gap between arithmetic intensity and ops-per-byte ratio: If a program allows, its operation may be reordered such that fetching the same data multiple times is avoided, which in turn increases the arithmetic intensity. Another way is to decrease the ops-per-byte ratio by utilizing the GPU memory hierarchy, which we discuss in the next paragraph.  
 
-A GPU thread hierarchy is directly followed by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. Depending on the desired level of data sharing within thread hierarchy, programmers can use various types fo memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed a magnitude faster than global memory, altough with capacity in hundreds of kB. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with virtually zero latency. 
+\subsubsection{Memory hierarchy}
+\label{sec:memory_hier}
+
+A GPU thread hierarchy is directly followed by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. This process is generally called \emph{caching}, but can be also interpreted as \emph{data sharing}, as the data is shared among threads in the same thread hierarchy. 
+
+Depending on the desired level of data sharing within thread hierarchy, programmers can use various types of memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed with a magnitude lower latency and higher bandwidth than global memory, although with a capacity in hundreds of kB. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with virtually zero latency. 
 
 To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since ops-per-byte ratio is inversly proportional to the memory bandwidth, a program using shared memory or registers does not have such big requirements on arithmetic intensity to achieve the maximum performance.
 
@@ -108,36 +115,41 @@ To sum up, the key to achieving high performance on a GPU is to minimize global 
 \end{figure}
 
 \subsubsection{Memory coalescing}
+\label{sec:coalescing}
 
 Fetching data from global memory is serviced in $128$-byte wide transactions. If a thread requests a single byte, the GPU will fetch the whole $128$-byte chunk, wasting the memory bandwidth on data that will never be read and negatively impacting ops-per-byte ratio. To utilize the memory bandwidth fully, the accumulated memory accesses of a warp lockstep should coalesce into a continuous memory locations (see Figure~\ref{fig:coal}).
 
 In practise, the fact whether a memory is transfered in an optimal number of transaction is directly influenced by the layout of the used data structures. One of plethora of examples may include using column-major matrix in matrix multiplication or avoiding usage of linked lists.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\textwidth]{img/coal1}
-    \caption{Coalesced memory accesses~\cite{site:cuda}.}
-    \label{fig:coal}
-\end{figure}
-
 \subsubsection{CPU--GPU data transfers}
+\label{sec:transfers}
 
 Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth even than the GPU global memory. Therefore, it is important to avoid redundant data transfers between the host and the device. 
 
 In true data-parallel algorithms, this is generally not a big issue because these data transfers can be overlapped with computation. Such overlapping is possible by GPU \emph{hardware queues}, which allow the execution of multiple programs as well as CPU--GPU memory transfers in parallel. This hardware feature is revealed by \emph{streams}, which are software abstractions of these queues. In an ideal scenario, one would use multiple streams to overlap $3$ main operations always present when programming on GPUs: CPU--GPU transfer, GPU computation, and GPU--CPU transfer (see Figure~\ref{fig:transfer}).
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\textwidth]{img/C2050Timeline-1024x670.png}
-    \caption{Time diagram of non-overlapped (top) and overlapped (bottom) transfer and computation~\cite{site:stream}.}
-    \label{fig:transfer}
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.9\textwidth]{img/coal1}
+        \caption{Warp accesses coalesced into 4 memory transactions~\cite{site:cuda}.}
+        \label{fig:coal}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/C2050Timeline-1024x670.png}
+        \caption{Time diagram of non-overlapped (top) and overlapped (bottom) transfer and computation~\cite{site:stream}.}
+        \label{fig:transfer}
+	\end{subfigure}
 \end{figure}
 
 \subsubsection{Thread divergence}
+\label{sec:divergence}
 
 The downside of the highly-parallel SIMT architecture is handling diverging execution paths in the code. If threads in a warp take different \texttt{if} or \texttt{switch} branches, the execution of these branches will be serialized, as depicted in Figure~\ref{fig:divergence}.
 
-To keep the number of active threads high for the most amount of time, intra-warp branching should be avoided. This can be achieved by lifting the branching to inter-warp level, replacing branches with arithmetic operations if possible, or by unrolling loops.
+To keep the number of active threads high for the most amount of time, intra-warp branching should be avoided. This can be achieved by lifting the branching to inter-warp level, replacing branches with arithmetic operations if possible, or by unrolling warp-wise loops.
 
 \begin{figure}
     \centering
@@ -147,12 +159,19 @@ To keep the number of active threads high for the most amount of time, intra-war
 \end{figure}
 
 \subsubsection{Thread occupancy}
+\label{sec:occupancy}
 
-The GPU is designed to run thousands of threads in parallel. However, the number of threads that can be executed concurrently is limited by the number of available resources on the SM. The occupancy of a kernel is the ratio of the number of active warps to the maximum number of warps that can be executed concurrently. The occupancy can be increased by reducing the number of registers used by a thread, increasing the number of threads per block, or reducing the amount of shared memory used by a block.
+The GPU is designed to run thousands of threads in parallel. Maximizing the number of concurrent threads is crucial for GPU utilization as it allows employing more cores in parallel but also \emph{hiding memory latencies} by switching between threads. A single SM can accomodate thousands of concurrent threads although the number of threads it can run in parallel is a magnitude lower. This difference is used by SM to aggresively context switch between different warps when the currently scheduled ones are waiting for a latency. Since the thread state resides on SM, the context switch is very fast and having enough available concurrent threads, it can effectively hide the memory latencies. 
 
-Want many active warps to hide latencies. But if have many, have small thread efficiency - not utilizing faster caches, using less registers. 
+The number of concurrent threads per SM is called the \emph{thread occupancy}. It denotes the ratio of the number of active warps to the maximum number of warps that can be executed concurrently on an SM. This metric is influenced by the resource requirements of a program: Increasing the shared memory usage per block or register usage per thead decreases the thread occupancy, which in turn decreases the parallel capacity of the GPU device. 
 
+However, a GPU code that achieves high thread occupancy uses less on-chip resources so it is required to use slower global memory more often, which in turn decreases the computational efficiency of a thread. Thread occupancy competes with the thread efficiency so their optimal ratio for a given hardware should be finely tuned to achieve the best performance.
 
+\subsection{Summary}
+
+In this section we provided a brief overview of the GPU architecture and programming model. It shows that the GPU programming is a complex field that requires a deep understanding of the hardware and software aspects. The aforementioned optimization problems materializing when in pursuit for the best performance serve only as a high-level guidance with many (sometimes deciding) details omitted. There are new interesting features emerging in the GPU programming field, such as \emph{block cluster}, a new element in the thread and memory hierarchy, specialized matrix multiplication-optimized \emph{tensor cores}, which increase ops-per-byte ratio ten-fold, or asynchronous data copies using \emph{tensor memory access}, which allow copying non-sequential data efficiently \dots As mentioned before, many of these optimization techniques compete with each other, further complicating the optimization process.
+
+In the following sections, we will describe our work of porting four scientific algorithms to GPUs and we will detail the main optimization challenges for each of them.
 
 \section{Hierarchical clustering with the Ma\-ha\-la\-no\-bis linkage}
 
@@ -258,7 +277,7 @@ From the perspective of GPU programming, Mahalanobis HC is a challenging problem
 % Furthermore, the execution on the real-world flow cytometry data showed that the average cost of the nearest neighbor array update is much lower than the worst case.
 
 
-The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot-spot becomes the computation of the covariance matrix of a merged cluster (Algorithm~\ref{alg01:esom}, Line~8). As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload which uses CUDA \emph{streams}~\cite{site:cuda}, which are CUDA constructs that enable high-level GPU task parallelism, such as overlapping the execution of mutliple GPU kernels and memory transfers. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
+The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot-spot becomes the computation of the covariance matrix of a merged cluster (Algorithm~\ref{alg01:esom}, Line~8). As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload using CUDA \emph{streams} (see \nameref{sec:transfers} in \cref{sec:gpu_optim}), which enables high-level GPU task parallelism. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
 
 \subsection{Results}
 
@@ -327,17 +346,11 @@ With such a description of the algorithm, we can deduce the time complexity for 
 
 Although the EmbedSOM CPU implementation already provided good performance, it still had an untapped parallelization potential and a potential for enablement as an interactive method in cytometry data analysis. Therefore, we followed up on it in our work. 
 
-The main challenge of EmbedSOM is low \emph{arithmetic intensity} --- the number of math operations per transferred byte. A huge math bandwidth of a GPU can only be achieved if the device can keep up transferring data from memory to the cores. Low arithmetic intensity indicates that data transfers will not keep up with the math bandwidth.
+The main challenge of EmbedSOM is low \emph{arithmetic intensity} (see \nameref{sec:arithmetic_int} in \cref{sec:gpu_optim}). Note that although the arithmetic intensity is primarily determined by the algorithm, it can be influenced by its implementation in a major way. For GPUs, there are many ways to fight the arithmetic intensity of an algorithm, such as kernel fusion~\cite{wahib2014scalable}, leveraging the memory hierarchy~\cite{lee2012cuda} or by reordering data accesses~\cite{ghysels2012improving} and optimizing data transactions~\cite{lu2020optimizing}. Generally, these approaches can be distilled into two groups: \emph{Data sharing} and \emph{latency hiding} (see \nameref{sec:memory_hier} and \nameref{sec:occupancy} in \cref{sec:gpu_optim}).
 
-Note that although the arithmetic intensity is primarily determined by the algorithm, it can be influenced by its implementation in a major way. For GPUs, there are many ways to fight the arithmetic intensity of an algorithm, such as kernel fusion~\cite{wahib2014scalable}, leveraging the memory hierarchy~\cite{lee2012cuda} or by reordering data accesses~\cite{ghysels2012improving} and optimizing data transactions~\cite{lu2020optimizing}. Generally, these approaches can be distilled into two groups:
-\begin{itemize}
-    \item \emph{Data reuse} --- A single datum is reused for as many operations as possible. This is especially useful for algorithms that load the same data multiple times for different computations. 
-    \item \emph{Latency hiding} --- Instead of waiting for data to arrive, a GPU context-switches to different threads to perform other operations. GPUs are designed to schedule many more threads than the number of cores with very little overhead. With enough work overlapping, the high memory latencies can be completely hidden.
-\end{itemize}
+We experimented with both approaches in our EmbedSOM implementation. Although L2 caches can partially handle data sharing, GPUs typically hardly benefit from them due to their low cache-to-core ratio~\cite{site:cuda}. Therefore, as one variant of $k$-NN part, we used \emph{shared memory}, a programmable cache, to store the data and landmarks. These were then used to compute all the possible pairwise distances before loading the next batch to maximize the arithmetic intensity. The second variant of the $k$-NN part used a highly parallel \emph{bitonic sort} to find the top-$k$ landmarks. This approach has the hidden benefit of low per-thread resource requirements, resulting in higher maximum GPU occupancy and, consequently, better latency hiding.
 
-We experimented with both approaches in our EmbedSOM implementation. Although caches can partially handle data reuse, GPUs typically hardly benefit from them due to their low cache-to-core ratio~\cite{site:cuda}. Therefore, as one variant of $k$-NN part, we used \emph{shared memory}, a programmable cache, to store the data and landmarks. These were then used to compute all the possible pairwise distances before loading the next batch to maximize the arithmetic intensity. The second variant of the $k$-NN part used a highly parallel \emph{bitonic sort} to find the top-$k$ landmarks. This approach has the hidden benefit of low per-thread resource requirements, resulting in higher maximum GPU occupancy and, consequently, better latency hiding.
-
-The embedding part of EmbedSOM does not offer such a data reuse opportunity, as each point has a different set of nearest landmarks. The only reuse can happen on the landmarks themselves. And since their count can be limited in some parameter configurations, we experimented with techniques that increase the memory bandwidth, such as \emph{vector load instructions}. 
+The embedding part of EmbedSOM does not offer such caching opportunity, as each point has a different set of nearest landmarks. The only reuse can happen on the landmarks themselves. And since their count can be limited in some parameter configurations, we experimented with techniques that increase the memory bandwidth, such as \emph{vector load instructions}. 
 
 \subsection{Results}
 
@@ -507,13 +520,11 @@ for (int i = -(n - 1); i <= n - 1; i++)
 \label{lst:cross}
 \end{listing}
 
-To assess the optimality of the trivial implementation, let us compute the arithmetic intensity of a single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused multiply-add operations. Considering the elements are represented as $4$B single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. To get a notion of the ideal value for the best hardware utilization, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity.
-
-Another helpful metric, especially for GPUs, is to obtain the \emph{ops per byte} ratio~\cite{site:cudaopb}. It is computed as the ratio of math and memory bandwidth, and when compared with an arithmetic intensity, it indicates whether the bottleneck lies in the arithmetic or memory pipeline. To put it into perspective, the ops per byte ratio of a modern NVIDIA V100 GPU is around $17$ for single-precision floats (and if we consider the \emph{tensor-cores}, optimized for matrix multiplication, ops per byte ratio is up to $67$). Since $\frac{1}{8} < 17$, the implementation of such an algorithm will be highly memory-bound.
+To assess the optimality of the trivial implementation, let us compute the arithmetic intensity of a single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused multiply-add operations. Considering the elements are represented as $4$B single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. In Section~\ref{sec:gpu_optim} we detail, that the ops-per-byte ratio of the modern NVIDIA V100 GPU is around $15$ for single-precision floats. Since $\frac{1}{8} < 15$, the implementation of such an algorithm will be highly memory-bound.
 
 \subsection{Optimization techniques}
 
-With this in mind, we experimented with extreme data-sharing techniques. There are many opportunities where the same data is read multiple times:
+With this in mind, we experimented with extreme data sharing techniques. There are many opportunities where the same data is read multiple times:
 \begin{itemize}
     \item When computing neighboring overlaps, most data from left and right matrices are read multiple times.
     \item In the $1:N$ scenario, when cross-correlating one left matrix with many right matrices, the data from the left matrix is read multiple times when computing the same overlap between multiple right matrices.
@@ -524,9 +535,9 @@ With such techniques, the arithmetic intensity is theoretically unbounded, provi
 
 The other big issue is the parallelism. Naturally, if one worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, the most effective implementation maintains the optimal balance between data sharing and parallelism.
 
-Lastly, the memory hierarchy can aid a low arithmetic intensity: the memory bandwidth is inversely proportional to the ops per byte ratio. If most of the working data resides in the faster memory, the ops per byte ratio is lower, and less computing is required to saturate the memory bandwidth. For the L2 cache of NVIDIA V100, the ops per byte ratio is around $3.5\times$ less than for the off-chip memory. As a result, if the caches are utilized correctly, less data sharing is required to utilize the hardware capabilities fully.
+Lastly, in Section~\ref{sec:gpu_optim} we described that the memory hierarchy can aid a low arithmetic intensity: the memory bandwidth is inversely proportional to the ops per byte ratio. For NVIDIA V100, the ops per byte ratio is $~3.5\times$ less when using L2 cache, and $~13\times$ less when using shared memory, compared to the off-chip memory~\cite{jia2018dissecting}. As a result, if the caches are utilized correctly, less data sharing is required to utilize the hardware capabilities fully.
 
-In our implementation, we took GPU-specific advantage of even faster memory than L2, the register file itself, to cache the data. The GPU register file is rather big, having $64$KB of capacity. However, the caching possibilities on thread registers are very limited. They are only allowed on a group of $32$ consecutive threads called a warp and allow only a specific access pattern. Still, they provide a higher throughput than the closest cache, the shared memory.
+In our implementation, we took GPU-specific advantage of even faster memory than shared memory, the register file itself, to cache the data. The GPU register file is rather big, having $64$~kB of capacity. However, the caching possibilities on thread registers are very limited. They are only allowed on a warp level and allow only a specific access pattern. Still, they provide a higher throughput than the closest cache, the shared memory.
 
 \subsection{Results}
 
@@ -583,9 +594,9 @@ Another performance challenge is the so-called \emph{mutant analysis}. In an exi
 
 \subsection{GPU acceleration challenges}
 
-Although the parallelization of MaBoSS may seem straightforward, it includes challenges that can significantly affect the overall performance. The main issue is the traversal of the binary expression tree to evaluate the Boolean formulae. Generally, traversing irregular data structures causes conditional branching and creates an irregular data access pattern. The latter ineffectively utilizes memory transactions, reducing the memory bandwidth, which is a crucial factor for GPU performance, as stated in the previous sections. Moreover, executing divergent branches on GPUs can be punished by serial execution of the threads if the branch divergence happens on the warp level. A combination of these issues may leave GPU heavily underutilized, gaining very little to no performance improvement over a well-parallelized CPU code.
+Although the parallelization of MaBoSS may seem straightforward, it includes challenges that can significantly affect the overall performance. The main issue is the traversal of the binary expression tree to evaluate the Boolean formulae. Generally, traversing irregular data structures causes conditional branching and creates an irregular data access pattern (see \nameref{sec:coalescing} and \nameref{sec:divergence} in Section~\ref{sec:gpu_optim}). A combination of these issues may leave GPU heavily underutilized, gaining very little to no performance improvement over a well-parallelized CPU code.
 
-Branch divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads always to evaluate the whole expression. 
+Thread divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads always to evaluate the whole expression. 
 The other possible approach would be to assign one formula to a thread. Naturally, this enables more parallelism but requires a more complex data structure to prevent thread divergence. The formulae need to be represented in the code so that each of their execution is issued as the same sequence of instructions. A way to achieve this is to convert formulas to CNF or DNF form and store them in the memory as a vector of bitmasks with a unified length.
 
 In our work, we partly followed the first approach. But instead of designing an ideal memory layout for the formulae, we used the \emph{CUDA NVRTC}~\cite{nvrtc-online} runtime compilation library to compile the formulas on the fly. It has the benefit of encoding the formulas into a native binary code, removing the necessity to fetch the data from the memory each time the formula is evaluated. Apart from that, the compiler can run a set of optimizations on the code, further improving the performance. Consequently, the runtime compilation comes at the cost of an additional runtime. Thankfully, our benchmarking showed that the compilation time amortizes well for simulations with reasonably big inputs.
@@ -594,7 +605,13 @@ In our work, we partly followed the first approach. But instead of designing an 
 
 The final implementation of the MaBoSS simulation achieved a speedup of $100-300\times$ on real-world datasets over the parallel CPU version. Moreover, we created a synthetic test suite to stress the scalability of the implementation, which showed that the GPU implementation can simulate models with thousands of nodes and billions of trajectories in minutes. These results suggest that the consumer laptop equipped with a GPU can simulate models that were previously restricted to high-end computers. Furthermore, the double and triple mutant analysis no longer belongs just to the domain of supercomputers but could become feasible on data center-grade GPUs. Overall, we believe that the GPU acceleration of the MaBoSS simulation can significantly improve the analysis of Boolean networks and enable researchers to explore complex models while conveniently using their personal computers.
 
+\section{Summary}
 
+We have presented four works of employing GPUs in scientific algorithms. The results have shown that the GPU acceleration of these algorithms can significantly improve the analysis of complex data and enable researchers to explore large inputs while conveniently using their personal computers.
+
+Also, it has shown that perhaps the most important aspect to consider when optimizing for GPUs is the memory. Let it be the memory access pattern, which influence the memory bandwidth, or data caching and sharing, which can significantly improve the arithmetic intensity. Since it seems that ops-per-byte ratio of GPUs will be increasing more and more, the memory optimization will be even more crucial in the future. The drastic majority of the problems we have encountered were memory-bound, and optimizing for memory accesses has brought the most significant performance improvements.
+
+Therefore, in the next chapter we will discuss our second part of the research --- the development of the tools and methods for streamlining memory-related optimizations.
 
 % thesis is organized as follows
 
