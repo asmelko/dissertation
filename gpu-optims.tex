@@ -1,4 +1,5 @@
 \chapter{Employing GPUs in scientific algorithms}
+\label{chap:gpu}
 
 The information age has brought a massive increase in the amount of data that is being collected and processed. The `data explosion' can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data-gathering devices (i.e., cytometers in bioinformatics, optic sensors in physics, seismometers in geology, etc.). The amount of data is simply too large to be processed in the required quantum of time. In order to alleviate this apparent pressure, the corresponding algorithm (which typically has super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can result in the ability to assess bigger data, use more detailed processing methods, or analyze the data in real time.
 
@@ -26,6 +27,7 @@ This chapter summarizes the process of porting scientific algorithms to GPUs and
 % GPU computing
 
 \section{Introduction to GPU programming}
+\label{sec:gpu_intro}
 
 
 Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they were used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms than ordinary CPUs. GPU chip semantic is oriented on high performance achieved by immense parallelism, with a design which promotes its further scalability. Its die surface is largly occupied by compute cores with very little space dedicated to cache and control, which contradics the CPU design (see the graphical reference in Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it~\cite{navarro2014survey}.
@@ -177,6 +179,7 @@ In summary, the field of GPU programming is vast and the optimization techniques
 
 
 \section{Hierarchical clustering with the Mahalanobis linkage}
+\label{sec:maha}
 
 In the field of bioinformatics, hierarchical clustering is a popular method for analyzing various types of data. 
 In general, hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some \emph{linkage criterion}.
@@ -307,6 +310,7 @@ As a result, the optimized Mahalanobis HC achieves a speedup of over $1400\times
 
 
 \section{Neighborhood-based dimensionality reduction}
+\label{sec:embedsom}
 
 % Another approach to the analysis of multidimensional point-like cloud datasets is to reduce the dimensionality of the data to a lower (human-readable) dimension while preserving the local structure of the data. This approach is used in many areas of life sciences, such as microscopy imaging, population biology, and others. The most popular methods for dimensionality reduction are t-SNE and UMAP. Both these methods are nonlinear neighborhood embeddings and use a stochastic approach to find the optimal mapping. However, their applicability reaches a limit when increasing the scale or requiring real-time processing.
 
@@ -459,6 +463,7 @@ After the thorough benchmarking process, we selected the most performing variant
 
 
 \section{Cross-correlation optimized for small inputs}
+\label{sec:cross-correlation}
 
 Leaving the realm of cytometry data analysis, we will focus on a highly data-bound problem: cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, material physics, and, with the advent of convolutional neural networks, machine learning. As one interpretation, it computes a similarity of two data series obtained by sliding one over the other and computing the dot product of the overlapping parts. The output is typically post-processed to get richer information, such as Earth's underground structure in seismology~\cite{zhou2021high}, road lane detection in computer vision~\cite{fan2018real}, or acoustic location in signal processing~\cite{belloch2015performance}.
 
@@ -548,6 +553,7 @@ The final implementation of the cross-correlation algorithm achieved a speedup o
 
 
 \section{Stochastic simulation of Boolean networks}
+\label{sec:maboss}
 
 % Large and complex biological systems. 
 % Represented as boolean networks. Vertices represent states and edges transition between states. 

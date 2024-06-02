@@ -1,20 +1,22 @@
 \chapwithtoc{Introduction}
 
 The general purpose GPU programming (GPGPU programming) has established a strong position in the domain of high-performance computing. 
-GPU programming enables the parallel execution of many threads on a single device, exploiting the massive computational power and memory bandwidth of modern GPUs. 
+GPU programming enables the parallel execution of many threads on a single device, exploiting the massive computational power of modern GPUs. 
 These devices are no longer used exclusively for graphics rendering, and since the advent of the CUDA framework (and other frameworks alike), they have become a viable alternative to CPUs for high-performance computing.
 Nowadays, the top data centers in the world are equipped with thousands of GPUs, being used for a wide range of tasks, including machine learning, data analytics, and scientific computing.
 
 Naturally, GPUs are not a silver bullet as they are not suitable for any task. 
 GPU programming poses many challenges, including complex hardware architectures, heterogeneous programming models, memory management, performance tuning, and portability.
-The ever-growing list of new CUDA features, such as dynamic parallelism, asynchronous memory copy, independent memory pools, kernel launch buffering, collective shared memory, tensor cores, and many more, is a double-edged sword; 
+The ever-growing list of new CUDA features, such as dynamic parallelism, asynchronous data copy, independent memory pools, kernel launch buffering, distributed shared memory, tensor cores, and many more, is a double-edged sword; 
 it aids programmers in achieving peak GPU performance in their applications but at the cost of increased programming complexity and an expert architecture knowledge requirement.
 Generally, GPGPU programming is an iterative process of developing a solution, profiling it, and optimizing the bottlenecks.
-Apart from that, there is generally no single `optimal' solution to the problem. The programmers must develop multiple variants that must be empirically tested to find the most suitable optimization for a specific set of input parameters.
+Apart from that, there is generally \emph{no single optimal solution} to the problem. The programmers must develop multiple variants that must be empirically tested to find the most suitable optimization for a specific set of input parameters.
 
-This thesis couples a set of data-intensive scientific algorithms and their GPU optimizations; each contains a detailed discussion of their concurrency opportunities, data dependency analyses, and the choice of the most suitable optimization variant. Each work employs a slightly different tool in the GPU programming toolbox. 
-In the second part of the thesis, we introduce the Noarr library, which builds upon the findings and expertise gained from the mentioned optimizations. We identified that the central part of many optimizations is the layout of the processed data in the memory. 
-Noarr adds layout primitives and provides a way to compose and traverse them in a customizable manner. Overall, the library aids in writing more expressive, maintainable, and modular HPC code.
+This thesis contributes to addressing challenges of GPGPU programming in two interconnected topics: 
+Firstly, the thesis couples a set of data-intensive scientific algorithms and their GPU optimizations; each contains a detailed discussion of their concurrency opportunities, memory operation analyses, and the choice of the most suitable optimization variant. Each work employs a slightly different tool in the GPU programming toolbox. 
+In the second part of the thesis, we introduce the Noarr library, which builds upon the findings and expertise gained from results of the previous part. We identified that the primary factor of many optimizations is the way of accessing data in the memory, generally referred to as \emph{memory optimizations}. 
+Noarr adds memory layouting primitives and provides a way to compose and traverse them in a customizable manner. The main goal of the library is to aid in writing more expressive, maintainable, and modular HPC code.
 
-The thesis is organized as follows. ...
+\paragraph{Structure of the thesis}
 
+The thesis is separated into two chapters. \cref{chap:gpu} describes the first part of the thesis, which focuses on the GPU optimizations of four scientific algorithms. The chapter starts with \cref{sec:gpu_intro}, which provides an introduction to the GPU programming and highlights the most significant performance related pitfalls. \cref{sec:maha} describes the first scientific algorithm, Hierarchical Clustering algorithm with Mahalanobis-based distance, and details the ways of overcoming problems of imbalanced workloads. In \cref{sec:embedsom}, EmbedSOM, a dimensionality reduction algorithm is discussed from the perspective of caching and utilization of multiple memory hierarchies. Further, we detail the importance of keeping high arithmetic intensity when implementing cross-correlation algorithm in \cref{sec:cross-correlation}. We conclude the chapter with \cref{sec:maboss}, which describes MaBoSS, a Monte Carlo based simulator of biological systems, and the runtime compilation capabilities of GPUs. \cref{chap:noarr} describes the second part of the thesis, which introduces the Noarr library. It is split into \cref{sec:layouts} and \cref{sec:traversals}, which logically divides the library into two subparts: the techniques of expressing memory layouts as first-class citizens and the ways of traversing them in a customizable manner. \cref{chap:contributions} contains the peer-reviewed publications which support the contributions of this work.

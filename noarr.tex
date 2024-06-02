@@ -1,4 +1,5 @@
 \chapter{Streamlining the development of parallel algorithms using Noarr}
+\label{chap:noarr}
 
 % - many scientific algorithms are centered around a master data structure
 %   - examples (matmul, transposition, physicell, ...)
@@ -64,6 +65,7 @@ To alleviate and streamline the mundane programming tasks repeatedly encountered
 
 
 \section{Memory Layouts}
+\label{sec:layouts}
 
 % - example of layout definition
 
@@ -307,6 +309,7 @@ The other benefit of having a layout as a reusable first-class object is the abi
 
 
 \section{Layout Traversals}
+\label{sec:traversals}
 
 Having specified how a data structure is laid in memory, the other possible point of optimization lies in the order how the data structure is iterated, its \emph{traversal}. In general, a traversal is usually written as a sequence of nested loops, which in turn generates a sequence of memory accesses. Using such interpretation, we define the traversal of a layout as follows:
 
