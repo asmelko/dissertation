@@ -66,7 +66,7 @@
 \def\contribution#1{
 \refstepcounter{contribution}
 \chapter*{Contribution \arabic{contribution}\\#1}
-\addcontentsline{toc}{chapter}{Contribution \arabic{contribution}\\#1}
+\addcontentsline{toc}{section}{Contribution \arabic{contribution}\\#1}
 }
 
 \crefname{contribution}{contribution}{contributions}
@@ -86,7 +86,7 @@
 % ONLINE VERSION without the manuscripts
 \newif\ifonlineversion
 \onlineversiontrue
-%\onlineversionfalse
+% \onlineversionfalse
 \newcommand\onlineomit[1]{\ifonlineversion\vfill\begin{center}\fbox{\parbox{16.5em}{\footnotesize A re-printed manuscript that would appear here is omitted in the electronic version of the thesis.}}\end{center}\vfill\else#1\fi}
 
 % publication contributions
