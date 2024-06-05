@@ -27,11 +27,11 @@
 
 Commonly, the core computation of scientific algorithms is centered around a master data structure. The examples include a matrix composed of cell features in an agent-based simulator~\cite{ghaffarizadeh2018physicell}, a grid of substrates in a diffusion solver~\cite{ghaffarizadeh2016biofvm}, a transition rates graph for Markov processes~\cite{koltai2020exact}, etc. In the vast majority of these algorithms, the location of the most performance-critical parts lies in a nested loop over these data structures.
 
-Possibly due to the lack of hardware expertise, usually there is no special attention paid to the memory performance when such loops are written by the domain experts~\cite{clauss2000automatic}. As a result, the programs show poor data locality, spending most of the CPU cycles waiting for the memory pipeline to deliver the data. 
+Possibly due to the lack of hardware expertise, usually there is no special attention paid to the memory performance when such loops are written by the domain experts~\cite{clauss2000automatic}. As a result, the programs show poor data locality, spending most of the CPU cycles waiting for the memory pipeline to deliver the data.
 
 A plethora of research works confirm that changing the way how data is laid in memory or modifying the nested loops can result in a significant performance improvement~\cite{gong2018empirical,stengel2015quantifying,serpa2019memory}. Such optimizations may include decreasing the number of cache misses by grouping the operation on the same data together, employing prefetching by streamlining the memory access pattern, or utilizing the vector instructions by aligning the data in memory.
 
-Arguably, given a nested loop to optimize, the expert in the performance optimization domain can pinpoint the biggest bottlenecks w.r.t. memory and propose close to optimal modifications with great probability. The most common modifications would include reordering the loops for the most possible serial access pattern and dividing the loops into tiles or strides to employ cache hierarchies~\cite{wolf1991data}. The problematic activity here, which takes the most programmers time, is putting these modifications into code. For example, let us have a nested loop of depth 3 with control variables \texttt{i, j, k} and bounds \texttt{I, J, K}. A simple tiling modification of the loop adds complexity in loop depth, variable count and index computation: 
+Arguably, given a nested loop to optimize, the expert in the performance optimization domain can pinpoint the biggest bottlenecks w.r.t. memory and propose close to optimal modifications with great probability. The most common modifications would include reordering the loops for the most possible serial access pattern and dividing the loops into tiles or strides to employ cache hierarchies~\cite{wolf1991data}. The problematic activity here, which takes the most programmers time, is putting these modifications into code. For example, let us have a nested loop of depth 3 with control variables \texttt{i, j, k} and bounds \texttt{I, J, K}. A simple tiling modification of the loop adds complexity in loop depth, variable count and index computation:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   for (i1 = 0; i1 < I / tile_I; i1++)
     for (j1 = 0; j1 < J / tile_J; j1++)
@@ -41,14 +41,14 @@ Arguably, given a nested loop to optimize, the expert in the performance optimiz
             for (k2 = 0; k2 < tile_K; k2++)
             // i=i1*tile_I+i2; j=j1*tile_J+j2; k=k1*tile_K+k2;
 \end{minted}
-Omitting corner cases, the code is already verbose and rather error-prone. A careful eye may spot a mistake, a usual copy-paste bug (see Line~$5$).
+Omitting corner cases, the code is already verbose and rather error-prone (a careful eye may spot a mistake, a usual copy-paste bug on Line~$5$).
 Naturally, the complexity of the code grows with the complexity of the optimization.
 
 Thankfully, many tools have been developed to alleviate this issue. Some provide automatic optimizations built within a compiler~\cite{trifunovic2010graphite,grosser2012polly}, some extend a compiler with pragma-like annotations to guide the optimization process~\cite{donadio2005language,yi2007poet,chen2008chill,namjoshi2016loopy} and others include ad-hoc solutions for a specific family of algorithms~\cite{9485033,AFANASYEV2021100707}. However, very little attention has been paid to aiding HPC programmers in writing the optimized code from scratch by providing them with a clean and maintainable way to express complex loop traversal and memory layout fit for their specific problem.
 
 To alleviate and streamline the mundane programming tasks repeatedly encountered during our work on optimizing scientific algorithms, we focused our work on developing a C++ library \emph{Noarr}. The main benefit of the library is that it allows to expressively and extensively define memory layouts of regular $n$-dimensional arrays and provides loop transformation primitives for their optimal traversal. It empowers HPC experts to swiftly develop their optimizations as a clean, maintainable code open to autotuning and parallelism while staying within the borders of the C++ standard without adding any dependency on the final software product (which is an advantage for the deployment in a scientific community).
 
-% Arguably, the biggest requirement for the optimal performance of these algorithms is such traversal over the master data structure that generates memory accesses in the most hardware-efficient way. This can either mean: the least number of cache misses, the best utilization of the memory hierarchy, loop unrolling, automatized vectorization. To have a brief perspective on the importance, a simple matrix transposition runs 50x faster when traverzing data in the right order.  
+% Arguably, the biggest requirement for the optimal performance of these algorithms is such traversal over the master data structure that generates memory accesses in the most hardware-efficient way. This can either mean: the least number of cache misses, the best utilization of the memory hierarchy, loop unrolling, automatized vectorization. To have a brief perspective on the importance, a simple matrix transposition runs 50x faster when traverzing data in the right order.
 
 % Critically, the expert int the performance optimization domain can usually guess the optimal or close to optimal traversal. In a big majority of cases, the proper cache utilization is just a question of iterating the loops in the right order and data tiling. The issue, which takes the most programmers time and is the most error-prone, is putting these traverals into code. A simple example of writing a tiling loop of 3D grid already results in an index hell.
 
@@ -72,7 +72,7 @@ To alleviate and streamline the mundane programming tasks repeatedly encountered
 % - example of traversal
 % - how hard to define traversal by hand
 
-% The main goal of noarr is to epressively and extensively define memory layouts and their traversals. There exists 
+% The main goal of noarr is to epressively and extensively define memory layouts and their traversals. There exists
 
 % definition of layout
 % definition of traversal
@@ -91,10 +91,10 @@ Generally, the way how data is laid in memory, a \emph{memory layout}, can be po
 
 \begin{defn}[Memory Layout]
   \label{def:layout}
-  Suppose a regular $n$-dimensional array $A$ with dimension lengths $d_1, \dots, d_n$ and an index space $\mathcal{I} = \{0,\dots,d_1 - 1\}\times \dots \times \{0,\dots,d_n - 1\}$. We define a \emph{memory layout} $\mathbb{L}$ of $A$ as a bijection $\mathbb{L}: \mathcal{I} \to \{0,\dots, \prod_{i}d_i - 1\}$. 
+  Suppose a regular $n$-dimensional array $A$ with dimension lengths $d_1, \dots, d_n$ and an index space $\mathcal{I} = \{0,\dots,d_1 - 1\}\times \dots \times \{0,\dots,d_n - 1\}$. We define a \emph{memory layout} $\mathbb{L}$ of $A$ as a bijection $\mathbb{L}: \mathcal{I} \to \{0,\dots, \prod_{i}d_i - 1\}$.
 \end{defn}
 
-Perhaps the most common memory layouts are row-major and column-major of a matrix (Figures~\ref{fig:layout-row} and~\ref{fig:layout-col}). Their respective bijections can be generated by indexing functions $L_{\text{row}}(i,j) = i \cdot d_2 + j$ and $L_{\text{col}}(i,j) = j \cdot d_1 + i$ and these functions would be carried to source code with slight modifications. 
+Perhaps the most common memory layouts are row-major and column-major of a matrix (Figures~\ref{fig:layout-row} and~\ref{fig:layout-col}). Their respective bijections can be generated by indexing functions $L_{\text{row}}(i,j) = i \cdot d_2 + j$ and $L_{\text{col}}(i,j) = j \cdot d_1 + i$ and these functions would be carried to source code with slight modifications.
 
 As alluded to in the motivation, common layouts used to optimize memory accesses require a complex code. A tiled matrix layout (Figure~\ref{fig:layout-tile}), the layout paramount for some algorithms to optimally use cache hierarchies, already requires a verbose indexing function. Helping ourselves with adding two intra-tile dimensions, the indexing function would look as follows:
 $$L_{\text{tiled}}(i,j,k,l) = (((i \cdot d_2 + j) \cdot d_3) + k) \cdot d_4 + l$$
@@ -107,13 +107,13 @@ Arguably, adding another tile dimension (to utilize multiple levels of cache), s
       \includegraphics[width=.9\linewidth]{img/matrix-row-major}
       \caption{row-major}
       \label{fig:layout-row}
-  \end{subfigure} 
+  \end{subfigure}
   \begin{subfigure}{.15\textwidth}
       \centering
       \includegraphics[width=.9\linewidth]{img/matrix-col-major}
       \caption{col-major}
       \label{fig:layout-col}
-  \end{subfigure} 
+  \end{subfigure}
   \begin{subfigure}{.15\textwidth}
       \centering
       \includegraphics[width=.9\linewidth]{img/matrix-tiled}
@@ -150,21 +150,21 @@ The importance of these issues has been recognized by the HPC community, especia
   int elem = w(0, 0, 0);
 \end{minted}
 
-Line~$6$ highlights other useful feature of the framework: The ability to decouple the layout from the underlying memory. The layout is a separate object from the memory pointer, which allows for easy reuse of the layout in different parts of the code. Connecting a layout to a memory is done explicitely by wrapping a layout and a memory pointer into a \texttt{View} object.
+Line~$6$ highlights other useful feature of the framework: The ability to decouple the layout from the underlying memory. The layout is a separate object from the memory pointer, which allows for easy reuse of the layout in different parts of the code. Connecting a layout to a memory is done explicitly by wrapping a layout and a memory pointer into a \texttt{View} object.
 
 Recently, much bigger communities have started to invest time in designing an extensible way of defining layouts. C++ has standardized \emph{mdspan} in C++23. It takes a finer approach, allowing to define layout dimensions using a more complex extent structure. Such a structure enables defining some dimension lengths as static (known at compile time) and mix them with some dynamic (known at runtime). With such information during compile-time, a compiler can employ optimizations such as constant folding, loop unrolling, or automatized vectorization. Similarly, as with a vector of strides in Kokkos, it defines a \texttt{LayoutPolicy}, responsible for converting dimensions to underlying 1D memory, and \texttt{mdspan} class as a \texttt{View} alternative:
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   // Some storage
   int* ptr = new int[80];
-  // An extent structure, the first two dims are static 
+  // An extent structure, the first two dims are static
   std::extents<3, 3, std::dynamic_extent> ext(4);
   // mdspan object with a pointer, extents and Fortran-style layout policy
   std::mdspan<int, decltype(ext), std::layout_left> s(ptr, ext);
   int elem = s[0, 0, 0];
 \end{minted}
 
-Nvidia has recently introduced \emph{CuTe}, a collection of C++ CUDA template abstractions for defining and operating on hierarchically multidimensional layouts of threads and data~\cite{cute-online}. It follows the similar principles aswith  the C++ standard: it defines \emph{shape}, \emph{stride} and \emph{tensor} as alternatives to Extents, LayoutPolicy and mdspan. The same example as above written using CuTe lists as follows:
+Nvidia has recently introduced \emph{CuTe}, a collection of C++ CUDA template abstractions for defining and operating on hierarchically multidimensional layouts of threads and data~\cite{cute-online}. It follows the similar principles as with the C++ standard: it defines \emph{shape}, \emph{stride} and \emph{tensor} as alternatives to Extents, LayoutPolicy and mdspan. The same example as above written using CuTe lists as follows:
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   // Some storage
@@ -179,12 +179,12 @@ Nvidia has recently introduced \emph{CuTe}, a collection of C++ CUDA template ab
   int elem = t(0, 0, 0);
 \end{minted}
 
-Shapes and strides can be nested, creating a hierarchy of coordinates. Also, every layout (even a nested one) can be indexed with 1D coordinates, iterating the index space in a colexicografix order. This allows for a natural indexation of complicated layouts; e.g., a tiled matrix 4D layout can be indexed using standard 2D coordinates, hiding the complexity of the layout. 
+Shapes and strides can be nested, creating a hierarchy of coordinates. Also, every layout (even a nested one) can be indexed with 1D coordinates, iterating the index space in a colexicografic order. This allows for a natural indexation of complicated layouts; e.g., a tiled matrix 4D layout can be indexed using standard 2D coordinates, hiding the complexity of the layout.
 Apart from that, CuTe also takes a formal approach, creating a \emph{layout algebra}. It defines a set of operations over layouts, such as concatenation, composition, tiling, etc. These operations are used to build more complex layouts from simpler ones.
 
-% CuTe - much more formal approach - defines a layout algebra 
+% CuTe - much more formal approach - defines a layout algebra
 % more complex layout able to "hide dimensions"
-% more complex stride, which does not have to 
+% more complex stride, which does not have to
 
 % If you're familiar with the C++23 feature mdspan, this is an important difference between mdspan layout mappings and CuTe Layouts. In CuTe, Layout is a first class citizen, is natively hierarchical to naturally represent functions beyond row-major and column-major, and can similarly be indexed with a hierarchy of coordinates. (mdspan layout mappings can represent hierarchical functions as well, but this requires defining a custom layout.) Input coordinates for an mdspan must have the same shape as the mdspan; a multidimensional mdspan does not accept 1-D coordinates.
 
@@ -215,7 +215,7 @@ Noarr aims to enhance the expressiveness, extendibility, and maintainability of 
   \item \emph{Proto-structures} --- a set of building blocks is provided to allow to easily define complex layouts by their various composition.
 \end{itemize}
 
-Let us give an example of a row-major matrix memory layout using noarr. Considering \mintinline{c++}{'i'} as a row dimension and \mintinline{c++}{'j'} as a column dimension, the layout can be defined as follows:
+Let us give an example of a row-major matrix memory layout using Noarr. Considering \mintinline{c++}{'i'} as a row dimension and \mintinline{c++}{'j'} as a column dimension, the layout can be defined as follows:
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   // Some storage
@@ -240,23 +240,23 @@ The other aspect of Noarr is the way how the layout is defined --- as a composit
   // and offset to the 1st row of the 2nd matrix
   auto batched_l = row_l ^ vector<'b'>(10);
   size_t o1 = batched_l | offset<'i', 'j', 'b'>(1, 0, 2);
-  // A tiled matrix layout (both row-major and col-major, 
+  // Two tiled matrix layouts (both row-major and col-major,
   // where 'k' and 'l' denote tile rows and columns)
   auto tiled_rr_l = row_l ^ vector<'l', 'k'>(5, 10);
   auto tiled_rc_l = row_l ^ vector<'k', 'l'>(10, 5);
-  // A sublayout composed of the 3rd row tiles 
+  // A sublayout composed of the 3rd row tiles
   auto tiled_3rd_l = tiled_rc_l ^ fix<'k'>(3);
   // A tiled matrix layout indexable using 2 coordinates
   auto tiled_2d_l = tiled_rr_l ^ merge_blocks<'i', 'k', 'I'>() ^ merge_blocks<'j', 'l', 'J'>();
   \end{minted}
-  
-The protostructures allow for expressing complex layouts in a readable and verifiable way. Furthermore, their extensibility in composition and separation from the underlying memory also allows for plug-in layouts, which can be easily \emph{reused} in different parts of the code.
 
-Let us have a complex layout of a multi-layered 3D grid gradient, which occurs on various code places and provides layouts for various memory pointers. In that case, a layout can be declared once with sufficient scope and reused in places where needed:
+The protostructures allow for expressing complex layouts in a readable and verifiable way. Furthermore, their extensibility in composition and separation from the underlying memory also allows for plug-in layouts, which can be easily \emph{reused} in different parts of the code:
+
+Let us have a complex layout of a multi-layered 3D grid gradient, which occurs on various code places and provides layouts for multiple memory pointers. In that case, a layout can be declared once with sufficient scope and reused in places where needed:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   // A globally accessible layout
-  auto gradient_layout = scalar<float>() 
-  ^ noarr::vector<'s', 'x', 'y', 'z', 'g'>(
+  auto gradient_layout = scalar<float>()
+    ^ vector<'s', 'x', 'y', 'z', 'g'>(
       substrates, grid_dims[0], grid_dims[1], grid_dims[2], lit<3>
     );
 
@@ -264,7 +264,7 @@ Let us have a complex layout of a multi-layered 3D grid gradient, which occurs o
     bag b = make_bag(gradient_layout, grad_ptr);
     // use the layout on cpu memory
   }
-  
+
   void func2_gpu(float* global_mem_ptr) {
     bag glb_b = make_bag(gradient_layout, global_mem_ptr);
     bag shm_b = make_bag(gradient_layout, shared_mem_ptr);
@@ -272,7 +272,7 @@ Let us have a complex layout of a multi-layered 3D grid gradient, which occurs o
   }
 \end{minted}
 
-The other benefit of having a layout as a reusable first-class object is the ability to have a localized change when deciding to change the layout during the implementation. Extending our previous example, if we want to reorder the gradient dimension \mintinline{c++}{'g'} to be the innermost one, we only change the definition of the object on Line~2 --- all the data structures using it will be transparently updated with the new layout.
+The other benefit of having a layout as a reusable first-class object is the ability to have a localized change when deciding to modify the layout code during the implementation. Extending our previous example, if we decide to reorder the gradient dimension \mintinline{c++}{'g'} to be the innermost one, we only change the definition of the object on Line~$2$ --- all the data structures using the layout will be transparently updated without any further code changes.
 
 
 % Noarr puts the biggest emphasis on expressiveness, perforamnce and extensibility of memory layouts. It is a standalone C++ header-only library based on template metaprogramming and is based on these principles:
@@ -281,14 +281,14 @@ The other benefit of having a layout as a reusable first-class object is the abi
 %   \item \emph{trivial layouts} A set of trivial layout transformers is provided to allow to easily define complex layouts by composition of simple transformations.
 % \end{itemize}
 
-% Noarr borrows trivial tranformations from a well-known set of loop transformation, but extends it with some more. These are dimension reordering, 
+% Noarr borrows trivial tranformations from a well-known set of loop transformation, but extends it with some more. These are dimension reordering,
 % strip mining, fusion, fission, but also a z-curve
 
 % Let us give an example of row-major matrix memory layout using noarr. Considering \mintinline{c++}{'i'} as a row dimension and \mintinline{c++}{'j'} as a column dimension, the layout can be defined as follows:
 % \begin{minted}[breaklines]{c++}
 % auto row_major = scalar<float>() ^ sized_vector<'j'>(n) ^ sized_vector<'i'>(m);
 % \end{minted}
-% The layout reads from left to right, signaling the innermost dimension first. 
+% The layout reads from left to right, signaling the innermost dimension first.
 % It is apparent, that \mintinline{c++}{row_major} object represents only a layout, and to access the data, a memory pointer has to be provided:
 % \begin{minted}[breaklines]{c++}
 % float* data = new float[n * m];
@@ -302,7 +302,7 @@ The other benefit of having a layout as a reusable first-class object is the abi
 % \begin{minted}[breaklines]{c++}
 % auto tiled = scalar<float>() ^ sized_vector<'l'>(tile_n) ^ sized_vector<'k'>(tile_m) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
 % \end{minted}
-% Here shows the power of named dimensions. Physically (in memory), \mintinline{c++}{'l'} and \mintinline{c++}{'k'} dimensions are innermost, representing column and row of a tile respetively. Dimensions \mintinline{c++}{'j'} and \mintinline{c++}{'i'} are outermost, representing column and row of a matrix, whose elements are whole tiles. With such semantics, tiles are both among themselves and within in row-major format. Unsurprisingly, the inter-tile layout can be changed to column-major by a simple rewrite: 
+% Here shows the power of named dimensions. Physically (in memory), \mintinline{c++}{'l'} and \mintinline{c++}{'k'} dimensions are innermost, representing column and row of a tile respetively. Dimensions \mintinline{c++}{'j'} and \mintinline{c++}{'i'} are outermost, representing column and row of a matrix, whose elements are whole tiles. With such semantics, tiles are both among themselves and within in row-major format. Unsurprisingly, the inter-tile layout can be changed to column-major by a simple rewrite:
 % \begin{minted}[breaklines]{c++}
 %   auto tiled = scalar<float>() ^ sized_vector<'k'>(tile_m) ^ sized_vector<'l'>(tile_n) ^ sized_vector<'j'>(n / tile_n) ^ sized_vector<'i'>(m / tile_m);
 % \end{minted}
@@ -311,14 +311,14 @@ The other benefit of having a layout as a reusable first-class object is the abi
 \section{Layout Traversals}
 \label{sec:traversals}
 
-Having specified how a data structure is laid in memory, the other possible point of optimization lies in the order how the data structure is iterated, its \emph{traversal}. In general, a traversal is usually written as a sequence of nested loops, which in turn generates a sequence of memory accesses. Using such interpretation, we define the traversal of a layout as follows:
+Having specified how a data structure is laid in memory, the other possible point of optimization lies in the order how the data structure is iterated, its \emph{traversal}. In general, a traversal is usually written as a sequence of nested loops, which in turn generates a sequence of data structure accesses. Using such interpretation, we define the traversal of a layout as follows:
 
 \begin{defn}[Layout Traversal]
   \label{def:traversal}
-  Suppose a sequence of $n$ nested loops with the loop boundaries $d_1, \dots, d_n$ and a memory layout with an index space $\mathcal{I}$. We define a \emph{layout traversal} $\mathbb{T}$ as a bijection $\mathbb{T}: \{0, \dots, \prod_{i}d_i - 1\} \to \mathcal{I}$. 
+  Suppose a sequence of $n$ nested loops with the loop boundaries $d_1, \dots, d_n$ and a memory layout of a data structure with an index space $\mathcal{I}$. We define a \emph{layout traversal} $\mathbb{T}$ as a bijection $\mathbb{T}: \{0, \dots, \prod_{i}d_i - 1\} \to \mathcal{I}$.
 \end{defn}
 
-In conjunction with the memory layout from Definition~\ref{def:layout}, we conclude a natural observation that $\mathbb{L}$ and $\mathbb{T}$ are composable and that their composition $\mathbb{L} \circ \mathbb{T}$ is a \emph{function from integers to integers}; i.e., it generates the memory access pattern. As a corroraly, the same sequence of accesses can be generated by either changing the layout ($\mathbb{L}$) or its traversal ($\mathbb{T}$). Therefore, same as with a layout, modifying a traversal can improve data locality, both in time and space. Although modifying traversal can be constrained by data dependencies, loop transformation is still a well-researched topic and complements the memory layout optimization~\cite{clauss2000automatic}.
+In conjunction with the memory layout from Definition~\ref{def:layout}, a natural observation arises: $\mathbb{L}$ and $\mathbb{T}$ are composable and their composition $\mathbb{L} \circ \mathbb{T}$ is a function \emph{from integers to integers} --- it generates the memory access pattern. As a corollary, the same sequence of accesses can be generated by either changing the layout ($\mathbb{L}$) or its traversal ($\mathbb{T}$). Therefore, same as with a layout, modifying a traversal can improve data locality, both in time and space. Although modifying traversal can be constrained by data dependencies, loop transformation is still a well-researched topic and complements the memory layout optimization~\cite{clauss2000automatic}.
 
 \subsection{Background}
 
@@ -346,11 +346,11 @@ or loop reordering:
   for (int j = 0; j < m; j+=1)
     for (int i = 0; i < n; i+=1)
 \end{minted}
-but also loop fusion, fission, reversal and others~\cite{mckinley1996improving}. 
+but also loop fusion, fission, reversal and others~\cite{mckinley1996improving}.
 
-These tools are straightforward to use, and their ability to combine them to form complex loop transformations makes them very expressive. A minor downsight is that they are typically closed to extensions and for majority of them, a precompiler with an extra preprocessing step, or a custom compiler extension is needed.
+These tools are straightforward to use, and their ability to combine them to form complex loop transformations makes them very expressive. A minor downside is that they are typically closed to extensions and for majority of them, a precompiler with an extra preprocessing step, or a custom compiler extension is needed.
 
-On the other hand, the target problems for annotation-based loop transformation tools are somehow limited. Naturally, the best use of them is made when there is already a baseline implementation, and the optimization is achieved just by adding a few lines on the top of the loop with the hottest performance spots. However, when developing an optimized solution from scratch and when the scale of the program passes a certain complexity threshold, optimizing just by annotations may become cumbersome. 
+On the other hand, the target problems for annotation-based loop transformation tools are somehow limited. Naturally, the best use of them is made when there is already a baseline implementation, and the optimization is achieved just by adding a few lines on the top of the loop with the hottest performance spots. However, when developing an optimized solution from scratch and when the scale of the program passes a certain complexity threshold, optimizing just by annotations may become cumbersome.
 
 A good evidence of this fact are case studies which compared the effort of programming a parallel algorithm using OpenMP, also a pragma-based library, with pure C++ libraries, such as TBB. The studies generally confirm that ease of expressing parallelism in OpenMP is traded for a lower abstraction level and flexibility. Language-based approaches, such as TBB, can utilize object-oriented design for more control, fostering of good programming style and higher abstraction level for \emph{newly} developed parallel programs~\cite{kegel2009using,ajkunic2012comparison,refsnes2011comparison}.
 
@@ -359,16 +359,16 @@ A good evidence of this fact are case studies which compared the effort of progr
 The similarities in memory layout and its traversal led to the development of \emph{Noarr Traversers}. It is based on the idea that each single loop, in some sequence of nested loops, can be interpreted as one (named) dimension in an index space domain. Assuming perfectly nested loops, such traversal can be interpreted as a Noarr layout and be subjected to the same transformations as a memory layout. To sum up, the key points of Noarr Traversers are as follows:
 \begin{itemize}
   \item \emph{Named dimensions} --- a traverser comprises named dimensions, each representing a loop in a sequence of nested loops.
-  \item \emph{Proto-structures} --- exactly as with layouts, a traverser is the subject to extension using the same proto-structures.
+  \item \emph{Proto-structures} --- exactly as with layouts, a traverser is the subject to extension using the same set of proto-structures.
   \item \emph{Index space extraction} --- the traverser extracts dimensions from the passed-in layouts and yields an index space corresponding to the cartesian product of the extracted dimensions.
 \end{itemize}
 
 Let us highlight the main idea of Noarr Traverser on an example of matrix multiplication, where a plain C++ implementation would look like this:
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
-  for (int i = 0; i < m; i++) 
-    for (int j = 0; j < n; j++) 
-      for (int k = 0; k < p; k++) 
+  for (int i = 0; i < m; i++)
+    for (int j = 0; j < n; j++)
+      for (int k = 0; k < p; k++)
         C[i][j] += A[i][k] * B[k][j];
 \end{minted}
 The nested loops follow the order of $3$ present dimensions: $i$, $j$ and $k$ denoting rows of $C$ and $A$, columns of $C$ and $B$, and rows of $A$ and columns of $B$ respectively. Smartly selecting the named dimensions of the layouts, the traversal can be rewritten using Noarr as follows:
@@ -377,12 +377,12 @@ The nested loops follow the order of $3$ present dimensions: $i$, $j$ and $k$ de
   auto A = make_bag(ptr_a, scalar<int> ^ vector<'k', 'i'>(K, I));
   auto B = make_bag(ptr_b, scalar<int> ^ vector<'j', 'k'>(J, K));
   auto C = make_bag(ptr_c, scalar<int> ^ vector<'j', 'i'>(J, I));
-  
+
   traverser(A, B, C) | [=](auto state) {
     C[state] += A[state] * B[state];
   };
 \end{minted}
-The traverser accepts the layouts (or bags) it shall iterate over. It extracts $3$ unique dimensions \mintinline{c++}{'i'}, \mintinline{c++}{'j'} and \mintinline{c++}{'k'} and iterates over the index space composed of these dimensions as if they were written as a sequence of nested loops (which is equivalent to the cartesian product of these dimensions). The lambda function on Line~$6$ is then executed for each point in the index space, passing the tuple of indices as the \texttt{state} argument to the lambda. 
+The traverser accepts the layouts (or bags) it shall iterate over. It extracts $3$ unique dimensions \mintinline{c++}{'i'}, \mintinline{c++}{'j'} and \mintinline{c++}{'k'} and iterates over the index space composed of these dimensions as if they were written as a sequence of nested loops (which is equivalent to the cartesian product of these dimensions). The lambda function on Line~$6$ is then executed for each point in the index space, passing the tuple of indices as the \texttt{state} argument to the lambda.
 
 Due to the same concept of named dimensions, traverser and layout objects are \emph{isomorphic}. Consequently, changing the traversal order is done the same way as modifying the layout --- by applying the proto-structures to the traverser. E.g., to reorder the loops to a more cache-friendly \mintinline{c++}{'i'}, \mintinline{c++}{'k'}, \mintinline{c++}{'j'} order, the traversal can be rewritten as follows:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
@@ -390,59 +390,59 @@ Due to the same concept of named dimensions, traverser and layout objects are \e
     C[state] += A[state] * B[state];
   };
 \end{minted}
-Furthermore, a side product of this isomorphism and property of composition, occasionally the proto-structure can be applied either to the layout or to the traverser to achieve the same effect.
+Furthermore, a side product of the isomorphism is that a proto-structure can be applied either to the layout or to the traverser granting the same effect.
 
 Let us conclude the benefits of tracking loops by names with a more complex example:
 Some transformations change the nesting level of the underlying loops, e.g., during a strip-mine transformation, where a loop is split into two nested loops by a blocking factor~\cite{mckinley1996improving}. Following the Noarr paradigm of named dimensions, a strip-mine is well defined by a proto-structure \mintinline[fontsize=\footnotesize]{c++}{into_blocks}, which accepts the first dimension as the input, which should be present in the layout, and two output dimension, which will be newly added to the composed layout. Since all loops are tracked by their names, the user has full control over the output of a transformation and can safely chain multiple transformations together. A tiled matrix multiplication can be expressed as follows:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   // breaking dimension 'i' into two new dimensions 'I' and 'x'
   auto tiles = into_blocks<'i', 'I', 'x'>(noarr::lit<16>)
-  ^ into_blocks<'j', 'J', 'y'>(noarr::lit<16>)
-  ^ into_blocks<'k', 'K', 'z'>(noarr::lit<16>)
-  // using the new dimensions
-  ^ reorder<'I', 'J', 'K', 'x', 'y', 'z'>(); 
+             ^ into_blocks<'j', 'J', 'y'>(noarr::lit<16>)
+             ^ into_blocks<'k', 'K', 'z'>(noarr::lit<16>)
+             // using the new dimensions
+             ^ reorder<'I', 'J', 'K', 'x', 'y', 'z'>();
 
   traverser(A, B, C) ^ tiles | [=](auto state) {
     C[state] += A[state] * B[state];
-  }; 
+  };
 \end{minted}
 
 \subsection{Reusability}
 
-Similarly as with layouts, a specific traversal order can be defined as an object, such as \texttt{tiles} on Line~$2$ in the previous code sample, and provide the same benefits: locality of a change and reusal.
+Similarly as with layouts, a specific traversal order can be defined as an object, such as \texttt{tiles} on Line~$2$ in the previous code sample, and provide the same benefits: locality of change and reusal.
 
 But this feature further extends to a perhaps more powerful concept which we call \emph{layout agnosticism} and \emph{traversal agnosticism}. As a case of the separation of concerns, a memory layout and traversal can be extracted from a function to the level of function arguments. These arguments may then serve as interfaces for the concrete traversal or layout objects:
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   template <class A_t, class B_t, class C_t, class Order_t>
-  void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+  void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order)
   {
       traverser(A, B, C) ^ my_order | [=](auto state) {
           C[state] += A[state] * B[state];
       };
   }
 \end{minted}
-The function \mintinline{c++}{matmul} becomes agnostic to the layout or traversal specified and, regardless the passed-in objects, it will run the same operations, just in a different order. 
+The function \mintinline{c++}{matmul} becomes agnostic to the layout or traversal specified and, regardless the passed-in objects, it will run the same operations, just in a different order.
 
 The modular template-based design of Noarr allows us to mimic the autotuning systems, which search the vast space of transformation, trying to find the most performant one for a specific computational function. In our approach, we may be able to express precisely that with
 the traversal-agnostic and layout-agnostic functions.
 
 \section{Summary}
 
-With the arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. The object-oriented design of the library allows writing complex memory optimizations in a extensible, reusable and even layout-agnostic way, with very little space for errors. The library has already been incorporated into our ongoing work of implementing a high-performance version of BioFVM~\cite{ghaffarizadeh2016biofvm}, a diffusion solver for 3D biological simulations, aiding in various loop transformations, vectorization, dividing the data into subdomains for parallelization, and others in a clean and self-documenting way\footnote{The code can be reviewed in the GitHub repository https://github.com/asmelko/paraBioFVM}.
+With the arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. The object-oriented design of the library allows writing complex memory optimizations in a extensible, reusable and even layout-agnostic way, with very little space for errors. The library has already been incorporated into our ongoing work of implementing a high-performance version of BioFVM~\cite{ghaffarizadeh2016biofvm}, a diffusion solver for 3D biological simulations, aiding in various loop transformations, vectorization, dividing the data into subdomains for parallelization, and other optimizations in a clean and self-documenting way\footnote{The code can be reviewed in the GitHub repository https://github.com/asmelko/paraBioFVM}.
 
-We believe that our solution will add a new expressive tool to a high-performance programming toolset, simplifying the research focusing on tunings of prewritten computational kernels and building complex optimized parallel algorithms from scratch.
+We believe that our solution will add a new expressive tool to a high-performance programming toolset, simplifying the research focusing on tuning of prewritten computational kernels and building complex optimized parallel algorithms from scratch.
 
 % \section{Auto-tuning and parallelism}
 
-% A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. This process of \emph{autotuning} is especially useful when the code is supposed to run on different hardware. As an example, the different cache sizes or vector registers widths can be easily adapted to by the autotuning process~\cite{frigo1998fftw,puschel2004spiral,whaley1998automatically}. 
+% A common benefit of the aforementioned annotation-based loop transformers is the ability to automatically search the transformation space and find the most optimal traversal. This process of \emph{autotuning} is especially useful when the code is supposed to run on different hardware. As an example, the different cache sizes or vector registers widths can be easily adapted to by the autotuning process~\cite{frigo1998fftw,puschel2004spiral,whaley1998automatically}.
 
 % The modular template-based design of Noarr allows us to mimic the autotuning systems. It is achieved by defining a layout or a traversal as an argument of a performance-critical function. That way, a function is agnostic of the layout or traversal specified and, regardless the passed-in layout, it will result in the same operations, just in a different order. Such layout-agnostic (or traveral-agnostic) functions can be called repeatedly with different combinations of layout and traversal transformations. Listing~\ref{lst:agn} shows an example of a transformation-agnostic function written using Noarr, used to generate a performance heatmap of the benchmarked transformations (Figure~\ref{fig:heatmap_all}).
 
 % \begin{listing}
 %   \begin{minted}[fontsize=\footnotesize,breaklines]{c++}
 %   template <class A_t, class B_t, class C_t, class Order_t>
-%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order)
 %   {
 %       traverser(A, B, C) ^ my_order | [=](auto state) {
 %           C[state] += A[state] * B[state];
@@ -482,7 +482,7 @@ We believe that our solution will add a new expressive tool to a high-performanc
 % \begin{listing}
 %   \begin{minted}[fontsize=\footnotesize,linenos,breaklines]{c++}
 %   template <class A_t, class B_t, class C_t, class Order_t>
-%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order) 
+%   void matmul(A_t& A, B_t& B, C_t& C, Order_t my_order)
 %   {
 %       traverser(A, B, C).order(my_order).for_each([&](auto Aidxs, auto Bidxs, auto Cidxs)
 %       {
