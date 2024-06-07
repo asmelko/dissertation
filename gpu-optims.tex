@@ -1,17 +1,17 @@
 \chapter{Employing GPUs in scientific algorithms}
 \label{chap:gpu}
 
-The information age has brought a massive increase in the amount of data that is being collected and processed. The \emph{data explosion} can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data acquisition devices such as cytometers in bioinformatics, seismometers in geology and others~\cite{brestoff2022contemporary,zhou2021high}. The amount of data is simply too large to be processed in the required quantum of time and in order to alleviate this apparent pressure, the corresponding algorithm (which typically has super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can result in the ability to assess bigger data, use more detailed processing methods, or analyze the data in real time~\cite{pratx2011gpu,navarro2014survey}.
+The information age has brought a massive increase in the amount of data that is being collected and processed. The \emph{data explosion} can be observed in virtually every field of computer science. In the scientific domain, this phenomenon is multiplied by increasingly powerful data acquisition devices such as cytometers in bioinformatics, seismometers in geology, and others~\cite{brestoff2022contemporary,zhou2021high}. The amount of data is too large to be processed in the required quantum of time, and in order to alleviate this apparent pressure, the corresponding algorithm (which typically has super-linear time complexity) must be ported to massively parallel architectures, such as GPUs. The provided advantage can result in the ability to assess massive amounts of data, use more detailed processing methods, or analyze the data in real time~\cite{pratx2011gpu,navarro2014survey}.
 
-This chapter summarizes the process of porting scientific algorithms to GPUs and highlights the challenges of optimizing for GPU architectures. But firstly, we start by introducing the GPU programming model and the main optimization techniques.
+This chapter summarizes the process of porting scientific algorithms to GPUs and highlights the challenges of optimizing for GPU architectures. But first, we start by introducing the GPU programming model and the main optimization techniques.
 
 
 % https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=6d66441f1b9bb54da2eb72803916116b9519816f
-% definitions of: paralelism, concurency, speedup, weak, strong scaling, parallel models \dots
+% definitions of: parallelism, concurrency, speedup, weak, strong scaling, parallel models \dots
 
 % https://aapm.onlinelibrary.wiley.com/doi/pdf/10.1118/1.3578605?casa_token=D59JYu3J2HIAAAAA:JILh37KdvsRh-gTwnLWxVIFqF_RbyoJIDUvcMIohAb_D82CQLAvQJuyQnlZxlTK3PT04JK2DXZ6u13g
 % Evolution of GPU
-% performance optimalizations
+% performance optimizations
 %  - arithmetic intensity
 %  - memory latencies
 %  - memory coalescing
@@ -30,9 +30,9 @@ This chapter summarizes the process of porting scientific algorithms to GPUs and
 \label{sec:gpu_intro}
 
 
-Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they were used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms than ordinary CPUs. GPU chip semantic is oriented on high performance achieved by immense parallelism, with a design which promotes its further scalability. Its die surface is largely occupied by compute cores with very little space dedicated to cache and control, which contradicts the CPU design (see the graphical reference in Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it~\cite{navarro2014survey}.
+Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures, or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms compared to ordinary CPUs. GPU chip semantics is oriented on high performance achieved by immense parallelism, with a design that promotes further scalability. Its die surface is largely occupied by compute cores with very little space dedicated to cache and control, which contradicts the CPU design (see the graphical reference in Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it~\cite{navarro2014survey}.
 
-The shift from specialized graphics processing to general-purpose computing was marked by the development of programming frameworks such as CUDA (Compute Unified Device Architecture) by NVIDIA and OpenCL (Open Computing Language) by Khronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming~\cite{croix2009introduction}. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
+The shift from specialized graphics processing to general-purpose computing was marked by the introduction of programming frameworks such as CUDA (Compute Unified Device Architecture) by NVIDIA and OpenCL (Open Computing Language) by Khronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming~\cite{croix2009introduction}. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
 
 \begin{figure}
 	\centering
@@ -52,11 +52,11 @@ The shift from specialized graphics processing to general-purpose computing was 
 
 \subsection{GPU Hardware Architecture and Programming Model}
 
-Generally, a programming model serves as a high-level abstraction of the hardware architecture, allowing programmers to write code that can run and scale well without the prior knowledge of the underlying hardware specifics. Depending on the programming framework or GPU vendor, the terminology within the model varies, but the core concepts remain the same. To maintain conciseness, we continue with the description in CUDA terms.
+Generally, a programming model serves as a high-level abstraction of the hardware architecture, allowing programmers to write code that can run and scale well without prior knowledge of the underlying hardware specifics. The terminology within the model varies depending on the programming framework or GPU vendor, but the core concepts remain the same. To maintain conciseness, we continue with the description in CUDA terms.
 
-Let us start with the hardware. The main building block of a GPU is the \emph{Streaming Multiprocessor} (SM). The diagram in Figure~\ref{fig:sm} displays its composition: SM encouples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory} and schedulers responsible for independent scheduling of groups of threads. There are multiple SMs in a GPU, their number highly correlating with a GPU cost --- more high-end the GPU, more SMs it holds. All SMs are connected via a high-speed interconnect to the GPU memory, the \emph{global memory}.
+Let us start with the hardware. The main building block of a GPU is the \emph{Streaming Multiprocessor} (SM). The diagram in Figure~\ref{fig:sm} displays its composition: SM couples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory}, and schedulers responsible for independent scheduling of groups of threads. There are multiple SMs in a GPU, their number highly correlating with a GPU cost --- the more high-end the GPU, the more SMs it holds. All SMs are connected via a high-speed interconnect to the GPU memory, the \emph{global memory}.
 
-The abstraction of this highly-parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, which are groups of threads that are executed on the same SM, sharing a register file and the shared memory. Lastly, a group of blocks, that is executed independently on multiple SMs, is called a \emph{grid}. Thus, the grid, as depicted on Figure~\ref{fig:grid}, defines the amount (and also the dimensionality) of concurrent work to be done on a GPU. Figure~\ref{fig:grid-sm} shows how the hierarchy of threads maps to GPU hardware, abstracting away the details of the hardware architecture in the process.
+The abstraction of this highly parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, groups of threads \emph{executed on the same SM}, sharing a register file and the shared memory. Lastly, a group of blocks that is executed independently on multiple SMs is called a \emph{grid}. Thus, the grid, as depicted in Figure~\ref{fig:grid}, defines the amount (and dimensionality) of concurrent work to be done on a GPU. Figure~\ref{fig:grid-sm} shows how the hierarchy of threads maps to GPU hardware, abstracting away the details of the hardware architecture in the process.
 
 \begin{figure}
 	\centering
@@ -77,26 +77,26 @@ The abstraction of this highly-parallel architecture is based on organizing thre
 
 Conceptually, this programming model is based on \emph{Single Instruction, Multiple Data} (SIMD) architecture, which is a type of parallel processing where a single instruction is executed on multiple data streams. In practice, SM issues threads in groups of $32$, called \emph{warps}, which execute in \emph{lockstep} --- all performing the same instruction at once. A more accurate description of this type of processing is \emph{Single Instruction, Multiple Threads} (SIMT), which is nowadays used to describe the GPU programming model.
 
-As a consequence of SIMT architecture and lockstep execution, GPUs favor \emph{data-parallel problems}. These are the problems such that their solution requires applying the same function on its whole domain (e.g., an $n$-dimensional array). The data-parallel problems are well-suited for GPUs, as they allow all threads to execute \emph{the same instruction} but on \emph{different data}~\cite{navarro2014survey}.
+As a consequence of SIMT architecture and lockstep execution, GPUs favor \emph{data-parallel problems}. These are problems such that their solution requires applying the same function to its whole domain (e.g., an $n$-dimensional array). The data-parallel problems are well-suited for GPUs, as they allow all threads to execute \emph{the same instruction} but on \emph{different data}~\cite{navarro2014survey}.
 
 \subsection{Optimizing for GPU performance}
 \label{sec:gpu_optim}
 
-Contemporary GPU devices are becoming increasingly sophisticated and are equipped with variety of control-flow mechanisms, interthread communication, atomic instruction and others, which allows for a wider range of problems to be solved on GPUs. However, applying these features correctly is not a trivial task as it requires a deep understanding of the architecture and programming model. Thus, achieving optimal performance on a GPU requires a careful consideration of various aspects. Let us detail the most important ones to watch for when optimizing GPU code~\cite{pratx2011gpu}.
+Contemporary GPU devices are becoming increasingly sophisticated and are equipped with a variety of control-flow mechanisms, interthread communication, atomic instruction, and others, which allow for a broader range of problems to be solved on GPUs. However, applying these features correctly is not trivial, as it requires a deep understanding of the architecture and programming model. Thus, achieving optimal performance on a GPU requires careful consideration of various aspects. Let us detail the most important ones to watch for when optimizing GPU code~\cite{pratx2011gpu}.
 
 \subsubsection{Arithmetic intensity}
 \label{sec:arithmetic_int}
 
-The peak performance of contemporary high-end GPUs is nowadays counted in TFLOPS (trillions of floating-point operations per second). In order to determine the actual achievable performance of a program, virtually always the memory bandwidth needs to be considered. Comparing peak performance and memory bandwidth of current GPU, we quickly conclude that the cores can not be fed with data at the same rate as they can compute.
+The peak performance of contemporary high-end GPUs is nowadays measured in TFLOPS (trillions of floating-point operations per second). In order to determine an actual achievable performance of a program, memory bandwidth needs to be considered virtually always. Comparing peak performance and memory bandwidth of current GPUs, we quickly conclude that the cores can not be fed data at the same rate as they can compute.
 
-Therefore, one of the most important constants in GPU programming is \emph{ops-per-byte} ratio. It is computed as the ratio of math and memory bandwidth and it simply determines how many math operations per transferred byte must be executed to achieve the theoretical maximum performance. For example, NVIDIA V100 GPU achieves $14$ TFLOPS peak single-precision performance with memory bandwidth of $900$ GB/s. This results $\frac{14}{0.9} \approx 15$ ops-per-byte ratio. As a simple rule of thumb, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
+Therefore, one of the most important constants in GPU programming is \emph{ops-per-byte} ratio. It is computed as the ratio of math and memory bandwidth, and it simply determines how many math operations per transferred byte must be executed to achieve the theoretical maximum performance. For example, NVIDIA V100 GPU achieves $14$ TFLOPS peak single-precision performance with a memory bandwidth of $900$ GB/s. This results $\frac{14}{0.9} \approx 15$ ops-per-byte ratio. As a simple rule of thumb, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such a property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
 
-To get more detail in hardware utilization than just comparing ops-per-byte ratio with arithmetic intensity, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity. Figure~\ref{fig:roof} shows an example of a roofline diagram, where x and y axes represent the arithmetic intensity and the performance, respectively. The horizontal lines represent achievable performance of single- and double-precision floating-point operations, and the diagonal line represents the memory bandwidth. The roofline model can be used to determine the performance bottlenecks of a program and to guide optimization efforts.
+To get more detail in hardware utilization than just comparing ops-per-byte ratio with arithmetic intensity, modern profilers include the \emph{roofline model}~\cite{williams2009roofline}. It is a graphical representation of a hardware attainable performance, given the algorithm arithmetic intensity. Figure~\ref{fig:roof} shows an example of a roofline diagram, where the x and y axes represent the arithmetic intensity and the performance, respectively. The horizontal lines represent the achievable performance of single- and double-precision floating-point operations and the diagonal line represents the memory bandwidth. The roofline model can be used to determine the performance bottlenecks of a program and to guide optimization efforts.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\textwidth]{img/roofline.png}
-    \caption{Example of a roofline diagram from NSight Compute profiler.}
+    \caption{An example of a roofline diagram from NSight Compute profiler.}
     \label{fig:roof}
 \end{figure}
 
@@ -105,11 +105,11 @@ Strictly speaking, there are two ways how to decrease the gap between arithmetic
 \subsubsection{Memory hierarchy}
 \label{sec:memory_hier}
 
-A GPU thread hierarchy is accompanied by \emph{memory hierarchy}. As allured in the previous paragraph, the global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls counted in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. This process is generally called \emph{caching}, but can be also interpreted as \emph{data sharing}, as the data is shared among threads in the same thread hierarchy.
+A GPU thread hierarchy is accompanied by \emph{memory hierarchy}. As alluded in the previous paragraph, global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls measured in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. This process is generally called \emph{caching} but can be also interpreted as \emph{data sharing}, as the data is shared among threads in the same thread hierarchy.
 
-Depending on the desired level of data sharing within thread hierarchy, programmers can use various types of memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed with a magnitude lower latency and higher bandwidth than global memory, although with a capacity in hundreds of kB. In extreme data sharing cases, threads in the same warp can use the register file as a cache, with close-to-zero zero latency.
+Depending on the desired level of data sharing within the thread hierarchy, programmers can use various types of memory (see Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed with a magnitude lower latency and higher bandwidth than global memory, although with a capacity of hundreds of kB. In extreme data sharing cases, threads in the same warp can use the register file as a cache with close-to-zero zero latency.
 
-To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since ops-per-byte ratio is inversely proportional to the memory bandwidth, a program using shared memory or registers as caches does not carry such big requirements on arithmetic intensity to achieve the maximum performance.
+To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since the ops-per-byte ratio is inversely proportional to the memory bandwidth, a program using shared memory or registers as caches does not carry such significant requirements on arithmetic intensity to achieve maximum performance.
 
 \begin{figure}
     \centering
@@ -121,9 +121,9 @@ To sum up, the key to achieving high performance on a GPU is to minimize global 
 \subsubsection{Memory coalescing}
 \label{sec:coalescing}
 
-Fetching data from global memory is serviced in $128$B wide transactions. If threads in a warp request a single byte, the GPU will fetch the whole $128$B chunk, wasting the memory bandwidth on data that will never be used and negatively impacting ops-per-byte ratio. To utilize the memory bandwidth fully, the accumulated memory accesses in a lockstep should coalesce into a continuous memory locations (see Figure~\ref{fig:coal}).
+Fetching data from global memory is serviced in $128$B wide transactions. If threads in a warp request a single byte, the GPU will fetch the whole $128$B chunk, wasting the memory bandwidth on data that will never be used and negatively impacting the ops-per-byte ratio. To utilize the memory bandwidth fully, the accumulated memory accesses in lockstep should coalesce into continuous memory locations (see Figure~\ref{fig:coal}).
 
-In practice, the fact whether a memory is transferred in an optimal number of transaction is directly influenced by the layout of the data structures in use. One of plethora of examples may include using column-major layout for the right-hand side matrix in matrix multiplication or avoiding usage of linked lists.
+In practice, whether memory is transferred in an optimal number of transactions is directly influenced by the layout of the data structures in use. One example may include using a column-major layout for the right-hand side matrix in matrix multiplication or avoiding the usage of linked lists.
 
 \begin{figure}[b]
 	\centering
@@ -144,38 +144,38 @@ In practice, the fact whether a memory is transferred in an optimal number of tr
 \subsubsection{CPU--GPU data transfers}
 \label{sec:transfers}
 
-Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth even than the GPU global memory. Therefore, it is important to avoid redundant data transfers between the host and the device.
+Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth even than the GPU global memory. Therefore, it is essential to avoid redundant data transfers between the host and the device.
 
-In true data-parallel algorithms, this is generally not a big issue because these data transfers can be overlapped with computation. Such overlapping is possible by GPU \emph{task queues}, which allow the execution of multiple programs as well as CPU--GPU memory transfers in parallel. This hardware feature is exposed by the software abstraction called \emph{streams}. In an ideal scenario, one would use multiple streams to overlap $3$ main operations always present when programming on GPUs: transferring input from CPU to GPU, GPU computation, and transferring output back from GPU to CPU (see Figure~\ref{fig:transfer}).
+In true data-parallel algorithms, this is generally not a big issue because these data transfers can be overlapped with computation. Such overlapping is possible by GPU \emph{task queues}, which allow the execution of multiple programs as well as CPU--GPU memory transfers in parallel. This hardware feature is exposed by the software abstraction called \emph{streams}. In an ideal scenario, one would use multiple streams to overlap three main operations always present when programming on GPUs: transferring input from CPU to GPU, GPU computation, and transferring output back from GPU to CPU (see Figure~\ref{fig:transfer}).
 
 \subsubsection{Thread divergence}
 \label{sec:divergence}
 
-The downside of the highly-parallel SIMT architecture is handling diverging execution paths in the code. If threads in a warp take different \texttt{if} or \texttt{switch} branches, the execution of these branches will be serialized, as depicted in Figure~\ref{fig:divergence}.
+The downside of the highly parallel SIMT architecture is handling diverging execution paths in the code. If threads in a warp take different \texttt{if} or \texttt{switch} branches, the execution of these branches will be serialized, as depicted in Figure~\ref{fig:divergence}.
 
-To keep the number of active threads high for the most amount of time, intra-warp branching should be avoided. Divergence can be mitigated by lifting the branching to inter-warp level, replacing branches with arithmetic operations if possible, or by unrolling warp-wise loops.
+Intra-warp branching should be avoided to keep the number of active threads high for the longest amount of time. Divergence can be mitigated by lifting the branching to the inter-warp level, replacing branches with arithmetic operations if possible, or unrolling warp-wise loops.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\textwidth]{img/divergence.png}
-    \caption{An example of diverging code with a diagram how warp threads would be scheduled~\cite{site:volta}.}
+    \caption{An example of diverging code with a diagram of how warp threads would be scheduled~\cite{site:volta}.}
     \label{fig:divergence}
 \end{figure}
 
 \subsubsection{Thread occupancy}
 \label{sec:occupancy}
 
-The GPU is designed to run thousands threads in parallel and tens of thousands threads concurrently. Increasing the number of concurrent threads above the limit of compute cores is crucial for GPU utilization as it allows \emph{hiding memory latencies} by switching between active threads. A single SM can accommodate thousands of concurrent threads although the number of accommodable cores is a magnitude lower. This high discrepancy is taken advantage of by the SM to aggressively context switch between different warps when the currently scheduled ones are waiting for a latency. Since all the thread context resides on-chip, the context switch has negligible overhead and having enough available concurrent threads, it can effectively hide the memory latencies.
+The GPU is designed to run thousands of threads in parallel and tens of thousands of threads concurrently. Increasing the number of concurrent threads above the limit of compute cores is crucial for GPU utilization as it allows \emph{hiding memory latencies} by switching between active threads. A single SM can accommodate thousands of concurrent threads, although the number of accommodable cores is a magnitude lower. The SM takes advantage of this high discrepancy to aggressively context switch between different warps when the currently scheduled ones are waiting for a latency. Since all the thread contexts reside on-chip, the context switch has negligible overhead, and, provided there are enough available concurrent threads, it can effectively hide the memory latencies.
 
-The number of concurrent threads per SM is called the \emph{thread occupancy}. It denotes the ratio of the number of active threads to the maximum number of threads that can be executed concurrently on an SM. This metric is influenced by the resource requirements of a program: Increasing the shared memory usage per block or register usage per thread decreases the thread occupancy, which in turn decreases the parallel capacity of the GPU device.
+The number of concurrent threads per SM is called the \emph{thread occupancy}. It denotes the ratio of active threads to the maximum number of threads that can be executed concurrently on an SM. This metric is influenced by the resource requirements of a program: Increasing the shared memory usage per block or register usage per thread decreases the thread occupancy, which in turn decreases the parallel capacity of the GPU device.
 
-However, a GPU code that achieves high thread occupancy uses less on-chip resources so it is required to use slower global memory more often, which in turn decreases the computational efficiency of a thread. Thus, thread occupancy and thread efficiency competes with each other and their optimal ratio for a given hardware should be finely tuned to achieve the best performance.
+However, a GPU code that achieves high thread occupancy uses less on-chip resources, so it is required to use slower global memory more often, which in turn decreases the computational efficiency of a thread. Thus, thread occupancy and thread efficiency compete with each other, and their optimal ratio for a given hardware should be finely tuned to achieve the best performance.
 
 \vspace{1cm}
 
-These are few of the most dominant optimization techniques used in GPU programming. For past few years, the GPU hardware has been evolving extraordinarily rapidly to satisfy the demand for hardware able to train artificial intelligence models with billions of parameters. This has brought many new features making the device more versatile and powerful. Let it be more advanced SMs, independent thread scheduling, \emph{block cluster} which bring a new element in the thread and memory hierarchy, specialized matrix multiplication-optimized \emph{tensor cores}, which increase ops-per-byte ratio ten-fold, or \emph{tensor memory access}, which allow asynchronous copying of non-sequential data efficiently \dots
+These are a few of the most dominant optimization techniques used in GPU programming. For the past few years, GPU hardware has evolved extraordinarily rapidly to satisfy the demand for hardware that can train artificial intelligence models with billions of parameters. This has brought many new features, making the device more versatile and powerful. Let it be more advanced SMs, independent thread scheduling, \emph{block cluster} which bring a new element in the thread and memory hierarchy, specialized matrix multiplication-optimized \emph{tensor cores}, which increase ops-per-byte ratio ten-fold, or \emph{tensor memory access}, which allow asynchronous copying of non-sequential data efficiently \dots
 
-In summary, the field of GPU programming is vast and the optimization techniques are often intertwined, competing with each other. The optimal solution is usually a compromise between the techniques, which is highly dependent on the specific properties of the problem. In the following sections, we will describe our work of porting scientific algorithms to GPUs using the terminology and knowledge established this section as guidelines to detail the main optimization challenges for each of them.
+In summary, the field of GPU programming is vast, and optimization techniques are often intertwined and compete with each other. The optimal solution is usually a compromise between the techniques, which is highly dependent on the specific properties of the problem. In the following sections, we will describe our work of porting scientific algorithms to GPUs using the terminology and knowledge established in this section as guidelines to detail the main optimization challenges for each of them.
 
 
 \section{Hierarchical clustering with the Mahalanobis linkage}
@@ -189,11 +189,11 @@ Perhaps the most common linkage may be the \emph{centroid linkage}, which define
 
 \subsection{Background}
 
-Mahalanobis hierarchical clustering was proposed by Fišer et al.~\cite{fivser2012detection} as a valuable tool for analysis of flow cytometry datasets. Due to the ever increasing rate of data acquisition, the size of flow cytometry datasets is constantly growing. Modern flow cytometers are able to process samples with millions of cells and measure tens of parameters (point dimensions) simultaneously. More traditional methods, such as manual gating, are not suitable for such high-dimensional data and are heavily observer-dependent. Automated hierarchical clustering methods offer a viable solution but often fail to reflect the elliptical shapes of flow cytometric populations.
+Mahalanobis hierarchical clustering was proposed by Fišer et al.~\cite{fivser2012detection} as a valuable tool for the analysis of flow cytometry datasets. Due to the ever-increasing rate of data acquisition, the size of flow cytometry datasets is constantly growing. Modern flow cytometers are able to process samples with millions of cells and measure tens of parameters (point dimensions) simultaneously. More traditional methods, such as manual gating, are not suitable for such high-dimensional data and are heavily observer-dependent. Automated hierarchical clustering methods offer a viable solution but often fail to reflect the elliptical shapes of flow cytometric populations.
 
-For this purpose, the authors proposed the Mahalanobis linkage. This allows for a very natural formation of clusters in biological data. However, the benefits come at a cost of a high time and space complexity. The author claim the upper usable bound of dataset size to be $10^4$ using the original \texttt{C} application. They state that the quadratic space complexity makes for the most significant limiting factor, leaving it unfeasible to analyze bigger datasets on current desktop computers.
+For this purpose, the authors proposed the Mahalanobis linkage. This allows for a very natural formation of clusters in biological data. However, the benefits come at a cost of high time and space complexity. The authors claim the upper usable bound of dataset size to be $10^4$ using the original \texttt{C} application. They state that the quadratic space complexity makes for the most significant limiting factor, leaving it unfeasible to analyze bigger datasets on current desktop computers.
 
-The authors tried to alleviate this limitation by implementing the approximation of \emph{apriori clusters}, where the data was pre-clustered using a na\"{i}ve Euclidean-based linkage reducing the overall size of the dataset. This increased the usability of the original code to datasets of around $10^6$ data points within an interactive environment~\cite{kratochvil2020shinysom}. Still, the proposed optimization could not keep up with the contemporary data acquisition methods, generating datasets of millions of multidimensional data points.
+The authors tried to alleviate this limitation by implementing the approximation of \emph{apriori clusters}, where the data was pre-clustered using a na\"{i}ve Euclidean-based linkage, reducing the overall size of the dataset. This increased the usability of the original code to datasets of around $10^6$ data points within an interactive environment~\cite{kratochvil2020shinysom}. Still, the proposed optimization could not keep up with the contemporary data acquisition methods, generating datasets of millions of multidimensional data points.
 
 \subsection{Algorithm complexity}
 
@@ -210,7 +210,7 @@ If we generalize a centroid of a cluster to a probability distribution, Definiti
     \delta_\text{Maha}(P,Q) = \frac{d_\text{Maha}(\bar{P},Q) + d_\text{Maha}(\bar{Q},P)}{2}
 \end{equation}\label{eq01:maha_linkage}
 
-To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of the proximity, the measure favors such clusters that their ellipses are alongside rather than in a prolongation of one another~\cite{dagnelie1991using}.
+To illustrate the measure of the Mahalanobis distance, let us suppose we have two elliptic clusters. In the means of proximity, the measure favors such clusters that their ellipses are alongside rather than in a prolongation of one another~\cite{dagnelie1991using}.
 Only when the objects of a cluster form a spherical shape, this dissimilarity measure is proportional to the Euclidean distance with a corresponding linkage (see Figure~\ref{fig:ellipses}).
 
 \begin{figure}[h]
@@ -220,9 +220,9 @@ Only when the objects of a cluster form a spherical shape, this dissimilarity me
     \label{fig:ellipses}
 \end{figure}
 
-Finally, Algorithm~\ref{alg01:maha} summarizes the Hierarchical Clustering (HC) with Mahalanobis linkage. Line~2 initiates $n-1$ iterations, each one starting with one less cluster to merge. Denoting $d$ as the dimension of the data, the time complexity of the Mahalanobis distance computation is $\mathcal{O}(d^2)$, according to the Equation~\ref{eq01:maha} and the fact, that the size of a covariance matrix is $d \times d$. The time complexity of the covariance matrix computation is $\mathcal{O}(d^2 \cdot c)$, where $c$ is the size of a cluster, and its inverse is computed in $\mathcal{O}(d^3)$.
+Finally, Algorithm~\ref{alg01:maha} summarizes the Hierarchical Clustering (HC) with Mahalanobis linkage. Line~2 initiates $n-1$ iterations, each one starting with one less cluster to merge. Denoting $d$ as the dimension of the data, the time complexity of the Mahalanobis distance computation is $\mathcal{O}(d^2)$, according to the Equation~\ref{eq01:maha} and the fact that the size of a covariance matrix is $d \times d$. The time complexity of the covariance matrix computation is $\mathcal{O}(d^2 \cdot c)$, where $c$ is the size of a cluster, and its inverse is computed in $\mathcal{O}(d^3)$.
 
-The standard HC, which utilizes a dissimilarity matrix, has a time complexity of $\mathcal{O}(n^3)$ and space complexity of $\mathcal{O}(n^2)$. There are other variants of HC, which influence the closest cluster pair retrieval and the amount of distances to recompute after each iteration. Other variants include HC with the nearest neighbor array, which trades the linear memory complexity for a worse time complexity on average, or the HC with priority queues, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$ for the sake of bigger memory requirements~\cite{day1984efficient}.
+The standard HC, which utilizes a dissimilarity matrix, has a time complexity of $\mathcal{O}(n^3)$ and space complexity of $\mathcal{O}(n^2)$. There are other variants of HC which influence the closest cluster pair retrieval and the amount of distances to recompute after each iteration. Other variants include HC with the nearest neighbor array, which trades the linear memory complexity for a worse time complexity on average, or the HC with priority queues, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$ for the sake of bigger memory requirements~\cite{day1984efficient}.
 
 \begin{algorithm}[t]
     \caption{Mahalanobis Hierarchical Clustering Analysis}
@@ -246,21 +246,21 @@ The standard HC, which utilizes a dissimilarity matrix, has a time complexity of
 % IN childhood acute lymphoblastic leukemia (ALL), response to therapy as measured by minimal residual disease (MRD) monitoring is an important biomarker for predicting relapse and stratifying treatment (1–5).
 
 % , flow cytometry generates increasingly large and information-rich
-% datasets, which provide new challenges for analysis. Modern multilaser flow cytometers are able to simultaneously measure up to 12 or more parameters and acquire
+% datasets, which provide new challenges for analysis. Modern multilaser flow cytometers are able to simultaneously measure up to 12 or more parameters and acquire
 % such information from millions of single cells (8,9)
 
 % Traditional gating of populations
-% on two-parameter plots is tedious and does not reflect the multidimensionality of the data. Moreover, both the setting of the gates and interpretation of the results are observer-dependent and require intensive training and high levels of expertise.
+% on two-parameter plots is tedious and does not reflect the multidimensionality of the data. Moreover, both the setting of the gates and interpretation of the results are observer-dependent and require intensive training and high levels of expertise.
 
 % Although hierarchical clustering methods
-% can place each cell in its hierarchical context within the analyzed dataset, their downside is that they often fail to reflect
+% can place each cell in its hierarchical context within the analyzed dataset, their downside is that they often fail to reflect
 % the elliptical shapes of flow cytometric population
 
 % However, the rapidly rising complexity of multiparameter
 % flow cytometry datasets creates new challenges. Currently, the
 % analytical standard in the field involves gating, in which one
 % or more gates are defined in each histogram or dual parameter
-% plot and a sequence or combination of gates defines the population of interest. This process is tedious or even unfeasible, already requires highly experienced cytometrists and is observer
+% plot and a sequence or combination of gates defines the population of interest. This process is tedious or even unfeasible, already requires highly experienced optometrists, and is observer
 % dependent. Most importantly, the sequential gating is limited
 % in its ability to reflect the multidimensionality of the data. A
 % solution to both the multidimensionality of flow data and the
@@ -273,21 +273,21 @@ The standard HC, which utilizes a dissimilarity matrix, has a time complexity of
 
 
 
-% problem - quadratic space complexity - even bigger problem with Mahalanobis distance and gpus
+% problem - quadratic space complexity - even bigger problem with Mahalanobis distance and GPUs
 
 \subsection{Implementation}
 
 
 
-From the perspective of GPU programming, Mahalanobis HC is a challenging problem. Algorithms with a high memory requirements are generally unfavorable for GPUs due to their limited DRAM. There has been a lot of work on overcoming this limitation, both from NVIDIA and the scientific community~\cite{zheng2016towards,kim2020batch,landaverde2014investigation}. CUDA has introduced \emph{unified memory}~\cite{site:cuda}, which allowed GPUs to work on data that exceeds GPU memory capacity by seamlessly copying data from CPU to GPU on page fault. This optimization can help only to a certain extent, as it can only scale to the size of CPU RAM and the data are usually sent through high-latency small-throughput interconnect. Therefore, in our work we experimented with other well-known HC variants which trade higher time complexity for a linear memory complexity --- \emph{HC with the nearest neighbor array}~\cite{day1984efficient}.
+From the perspective of GPU programming, Mahalanobis HC is a challenging problem. Algorithms with high memory requirements are generally unfavorable for GPUs due to their limited DRAM. There has been a lot of work on overcoming this limitation, both from NVIDIA and the scientific community~\cite{zheng2016towards,kim2020batch,landaverde2014investigation}. CUDA has introduced \emph{unified memory}~\cite{site:cuda}, which allowed GPUs to work on data that exceeds GPU memory capacity by seamlessly copying data from CPU to GPU on page fault. This optimization can help only to a certain extent, as it can only scale to the size of CPU RAM and the data are usually sent through high-latency small-throughput interconnect. Therefore, in our work, we experimented with other well-known HC variants that trade higher time complexity for a linear memory complexity --- \emph{HC with the nearest neighbor array}~\cite{day1984efficient}.
 % Furthermore, the execution on the real-world flow cytometry data showed that the average cost of the nearest neighbor array update is much lower than the worst case.
 
 
-The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot-spot becomes the computation of the covariance matrix of a merged cluster (Algorithm~\ref{alg01:esom}, Line~8). As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload using CUDA \emph{streams} (see \nameref{sec:transfers} in \cref{sec:gpu_optim}), which enabled running these tasks in parallel. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
+The other obstacle of Mahalanobis HC is the greatly imbalanced workload. In the first iterations, the runtime is dominated by the complex Mahalanobis linkage computation over many pairs of $n$ clusters. But as the number of clusters decreases, the hot spot becomes the computation of the covariance matrix of a merged cluster (Algorithm~\ref{alg01:esom}, Line~8). As a result, for the most time during the computation the GPU is not fully utilized either due to small amount of parallelism in covariance matrix computation or in the similarity computation. For that case, we designed a workload using CUDA \emph{streams} (see \nameref{sec:transfers} in \cref{sec:gpu_optim}), which enabled running these tasks in parallel. Consequently, this allowed us to keep the utilization of more GPU cores during the whole runtime of the algorithm.
 
 \subsection{Results}
 
-The optimized Mahalanobis HC achieves a speedup of over $1400\times$ compared to the original serial CPU implementation. We benchmarked the application on the real-world single-cytometry datasets. The biggest dataset which we obtained, the Samusik-All~\cite{flowrepo} ($841$ thousand $39$D points), was able to finish in the order of minutes compared to the order of days. Furthermore, the application has been distributed as a R package \texttt{gmhc} to fit workflows carried out by a bioinformatics community. As of our knowledge, the package enabled the scientists to analyze big datasets as a whole, without the apriori clustering approximation, increasing the accuracy of the analyzed data and decreasing the turnaround time of the analysis.
+The optimized Mahalanobis HC achieves a speedup of over $1400\times$ compared to the original serial CPU implementation. We benchmarked the application on the real-world single-cytometry datasets. The biggest dataset which we obtained, the Samusik-All~\cite{flowrepo} ($841$ thousand $39$D points), was able to finish in the order of minutes compared to the order of days. Furthermore, the application has been distributed as a R package \texttt{gmhc} to fit workflows carried out by a bioinformatics community. To the best of our knowledge, the package enabled the scientists to analyze big datasets as a whole without the apriori clustering approximation, increasing the accuracy of the analyzed data and decreasing the turnaround time of the analysis.
 
 % Hierarchical Clustering (HC) is a well-known problem, and there are many algorithms that effectively solve it. Roughly, they can be divided into categories according to the data structures they employ [TODO]:
 % \begin{itemize}
@@ -317,7 +317,7 @@ The optimized Mahalanobis HC achieves a speedup of over $1400\times$ compared to
 % The EmbedSOM algorithm tries to tackle this limitation. It is based on self-organizing maps and uses a landmarks-based approach to reduce the computational complexity. Instead of computing all pairwise distances and stochastically optimizing the low-dimensional mapping, EmbedSOM uses a small set of landmarks to approximate the mapping. This allows for over a magnitude better performance while retaining the reasonable accuracy of the results. In our works, we followed up on the EmbedSOM algorithm and implemented it on GPUs to achieve real-time processing of large datasets, allowing for a semi-supervised dataset analysis.
 
 
-Complementary to hierarchical clustering, a different approach to displaying cytometry datasets is \emph{dimensionality reduction} (also called \emph{embedding}), in which multi-dimensional cells are projected into a 2-dimensional plane, a picture, which shows cells arranged in groups with common properties. This methodology allows for a fast and reliable way to analyze cell populations, their relative size, and the presence of various features. The currently used dimensionality reduction tools are typically based on the principle of optimizing a low-dimensional embedding while preserving high-dimensional properties of interest. However, the most popular tools following this methodology, such as t-SNE~\cite{maaten2008visualizing}, UMAP~\cite{becht2019dimensionality} or TriMAP~\cite{amid2019trimap}, can suffer poor performance on large data due to the need to examine a nontrivial subset of $\binom{n}{2}$ relations (such as the pairwise distances) between $n$ data points~\cite{kratochvil2019generalized}.
+Complementary to hierarchical clustering, a different approach to displaying cytometry datasets is \emph{dimensionality reduction} (also called \emph{embedding}), in which multidimensional cells are projected into a 2-dimensional plane, a picture, which shows cells arranged in groups with common properties. This methodology allows for a fast and reliable way to analyze cell populations, their relative size, and the presence of various features. The currently used dimensionality reduction tools are typically based on the principle of optimizing a low-dimensional embedding while preserving high-dimensional properties of interest. However, the most popular tools following this methodology, such as t-SNE~\cite{maaten2008visualizing}, UMAP~\cite{becht2019dimensionality} or TriMAP~\cite{amid2019trimap}, can suffer poor performance on large data due to the need to examine a nontrivial subset of $\binom{n}{2}$ relations (such as the pairwise distances) between $n$ data points~\cite{kratochvil2019generalized}.
 
 A lot of effort has been dedicated to optimizing the performance of these algorithms. Solely for t-SNE, we can find multiple works related to this topic~\cite{pezzotti2016hierarchical,pezzotti2016approximated,linderman2017efficient,belkina2018automated}. Regardless of these developments, the processing time of these algorithms scales super-linearly with the number of data points, which inevitably leads to the need of data downsampling. \emph{EmbedSOM} algorithm, introduced by Kratochvíl et al.~\cite{kratochvil2019generalized}, is designed to overcome this limitation. The costly parts of the previous methods can be omitted by creating a smaller model of the data obtained (not exclusively) by \emph{self-organizing maps}. EmbedSOM uses the information of such an approximated manifold to compute the final embedding, retaining a competitive quality of the visualization.
 
@@ -357,7 +357,7 @@ The main challenge of EmbedSOM is low \emph{arithmetic intensity} (see \nameref{
 
 We experimented with both approaches in our EmbedSOM implementation. Although L2 caches can partially handle data sharing, GPUs typically hardly benefit from them due to their low cache-to-core ratio~\cite{site:cuda}. Therefore, as one variant of $k$-NN part, we used \emph{shared memory}, a programmable cache, to store the data and landmarks. These were then used to compute all the possible pairwise distances before loading the next batch to maximize the arithmetic intensity. The second variant of the $k$-NN part used a modified \emph{bitonic sort} to find the top-$k$ landmarks. This approach has the hidden benefit of low per-thread resource requirements, resulting in higher maximum GPU occupancy and, consequently, better latency hiding  (see \nameref{sec:occupancy} in \cref{sec:gpu_optim}).
 
-The embedding part of EmbedSOM does not offer such caching opportunity, as each point has a different set of nearest landmarks. The only reuse can happen on the landmarks themselves. And since their count can be limited in some parameter configurations, we experimented with techniques that increase the memory bandwidth, such as \emph{vector load instructions}.
+The embedding part of EmbedSOM does not offer such caching opportunities, as each point has a different set of nearest landmarks. The only reuse can happen on the landmarks themselves. And since their count can be limited in some parameter configurations, we experimented with techniques that increase the memory bandwidth, such as \emph{vector load instructions}.
 
 \subsection{Results}
 
@@ -387,7 +387,7 @@ After the thorough benchmarking process, we selected the most performing variant
 % datasets.
 
 % e ever-increasing size and dimensionality of data generated by ow and
-% mass cytometry experiments drive interest in simplifying data analysis. Employing the usual repetitive manual gating, exploration and back-gating techniques is tedious if the sample count is high, and becomes imprecise on complex
+% mass cytometry experiments drive interest in simplifying data analysis. Emplaying the usual repetitive manual gating, exploration and back-gating techniques is tedious if the sample count is high, and becomes imprecise on complex
 % 20 data. During the past decade, a multitude of automated analysis methods have
 % been introduced, including various unsupervised clustering and phenotyping algorithms, and embedding methods. Comprehensive reviews of the algorithms
 % are available [19, 27, 10, 11]
@@ -420,8 +420,8 @@ After the thorough benchmarking process, we selected the most performing variant
 % SOM-relative coordinates.
 % e performance-oriented design of EmbedSOM diers substantially from
 % other commonly used embedding methods. Most importantly, the usual time55 consuming iterative optimization of single cell positions in the embedding is replaced by relatively fast manifold approximation by SOM training. Additionally,
-% the separation of the SOM-training from other stages of the algorithm introduces exibility that allows precise manipulation of separate embedding properties, such as reliable alignment of cell populations in the embedding even with
-% 60 substantially dierent samples, and easy optimization of the embedding layout
+% the separation of the SOM-training from other stages of the algorithm introduces exibility that allows precise manipulation of separate embedding properties, such as reliable alignment of cell populations in the embedding even with
+% 60 substantially different samples, and easy optimization of the embedding layout
 
 % 2.1. EmbedSOM provides superior embedding speed
 % e main distinctive feature of EmbedSOM is its computational eciency. A
@@ -432,16 +432,16 @@ After the thorough benchmarking process, we selected the most performing variant
 % common oce hardware. Moreover, since the major SOM-training part of the
 % required computation is shared with FlowSOM, EmbedSOM visualization adds
 % only minor computational complexity to workows that already use FlowSOM.
-% antitative measurements of the speed advantage on the benchmark com85 putations are displayed in Figure 1a. e results conrm the expected performance scaling gap between UMAP and EmbedSOM, caused by dierent algo3
+% antitative measurements of the speed advantage on the benchmark com85 putations are displayed in Figure 1a. e results conrm the expected performance scaling gap between UMAP and EmbedSOM, caused by dierent algo3
 % rithm design. Generally, UMAP and tSNE are very ecient for high-dimensional
-% data with a low data point count, because they remove the dimensionality overhead early in the process but require more than linear amount of computation
+% data with a low data point count, because they remove the dimensionality overhead early in the process but require more than linear amount of computation
 % 90 to optimize the nal data point positions. e performance of both EmbedSOM
 % stages is linear in the number of data points, but the dimensionality overhead is
 % present throughout almost the entire computation as another linear factor.
 % EmbedSOM benets from this trade-o when applied to high-volume ow
 % and mass cytometry data that are physically limited to dozens of dimensions.
-% 95 Conversely, UMAP remains faster on low-volume datasets with more than hundreds of dimensions. For example, the raw single-cell RNA sequencing data must
-% be pre-processed (e.g. reduced to principal components) in order to deliver comparable results with SOM-based algorithms [7].
+% 95 Conversely, UMAP remains faster on low-volume datasets with more than hundreds of dimensions. For example, the raw single-cell RNA sequencing data must
+% be pre-processed (e.g., reduced to principal components) in order to deliver comparable results with SOM-based algorithms [7].
 % Overall, the performance scaling dierence is best illustrated by the compu100 tation time required for running workows used later in the article: Embeddingassisted dissection of 1 million cells (Section 2.3) takes less than 5 minutes of
 % computation with EmbedSOM; but more than 1 hour with UMAP. Embedding of
 % the 24 million cells from Pregnancy dataset (Section 2.4) can be nished faster
@@ -458,7 +458,7 @@ After the thorough benchmarking process, we selected the most performing variant
 % cell populations, the user may display and analyze the differences
 % between samples and sample groups, and visualize the results of
 % statistical testing of the differences in cell abundance. Finally, the
-% annotated populations may be partitioned into smaller datasets, in
+% annotated populations may be partitioned into smaller datasets in
 % order to be explored in more detail.
 
 
@@ -528,7 +528,7 @@ for (int i = -(n - 1); i <= n - 1; i++)
 \label{lst:cross}
 \end{listing}
 
-To assess the optimality of the trivial implementation, let us compute the arithmetic intensity of a single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused multiply-add operations. Considering the elements are represented as $4$B single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. In Section~\ref{sec:gpu_optim} we detail, that the ops-per-byte ratio of the modern NVIDIA V100 GPU is around $15$ for single-precision floats. Since $\frac{1}{8} < 15$, the implementation of such an algorithm will be highly memory-bound.
+To assess the optimality of the trivial implementation, let us compute the arithmetic intensity of a single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused multiply-add operations. Considering the elements are represented as $4$B single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. In Section~\ref{sec:gpu_optim}, we detail that the ops-per-byte ratio of the modern NVIDIA V100 GPU is around $15$ for single-precision floats. Since $\frac{1}{8} < 15$, the implementation of such an algorithm will be highly memory-bound.
 
 \subsection{Optimization techniques}
 
@@ -543,9 +543,9 @@ With such techniques, the arithmetic intensity is theoretically unbounded, provi
 
 The other big issue is the parallelism. Naturally, if one worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, the most effective implementation maintains the optimal balance between data sharing and parallelism.
 
-Lastly, in Section~\ref{sec:gpu_optim} we described that the memory hierarchy can aid a low arithmetic intensity: the memory bandwidth is inversely proportional to the ops per byte ratio. For NVIDIA V100, the ops per byte ratio is $~3.5\times$ less when using L2 cache, and $~13\times$ less when using shared memory, compared to the off-chip memory~\cite{jia2018dissecting}. As a result, if the caches are utilized correctly, less data sharing is required to utilize the hardware capabilities fully.
+Lastly, in Section~\ref{sec:gpu_optim} we described that the memory hierarchy can aid a low arithmetic intensity: the memory bandwidth is inversely proportional to the ops per byte ratio. For NVIDIA V100, the ops per byte ratio is $~3.5\times$ less when using L2 cache and $~13\times$ less when using shared memory, compared to the off-chip memory~\cite{jia2018dissecting}. As a result, if the caches are utilized correctly, less data sharing is required to utilize the hardware capabilities fully.
 
-In our implementation, we took GPU-specific advantage of even faster memory than shared memory, the register file itself, to cache the data. The GPU register file is rather big, having $65536$ $32$B registers. However, the caching possibilities on thread registers are very limited. They are only allowed on a warp level and allow only a specific access pattern. Still, they provide a higher throughput than the closest cache, the shared memory.
+In our implementation, we took GPU-specific advantage of even faster memory than shared memory, register file itself, to cache the data. The GPU register file is rather big, having $65536$ $32$B registers. However, the caching possibilities on thread registers are very limited. They are only allowed on a warp level and allow only a specific access pattern. Still, they provide a higher throughput than the closest cache, the shared memory.
 
 \subsection{Results}
 
@@ -556,17 +556,17 @@ The final implementation of the cross-correlation algorithm achieved a speedup o
 \label{sec:maboss}
 
 % Large and complex biological systems.
-% Represented as boolean networks. Vertices represent states and edges transition between states.
+% Represented as boolean networks. Vertices represent states, and edges transition between states.
 % Transitions from a state are described by boolean formulas on the states.
 
-% Analythical methods are limited to small models. (power of two)
+% Analytical methods are limited to small models. (power of two)
 % Simulated as Monte Carlo simulations.
 
 % Bigger models require a lot of simulations. Sizek takes a non trivial amount of time. There are bigger models. Mutant analysis is even more expensive. Restricted to single mutants
 
 % A tough problem for GPU - iterating binary tree brings a lot of branching, a lot of memory accesses, a lot of data to transfer.
 % branch divergence, memory access patterns are of concern
-% could be solved by different methods - no collaboration of boolean formuals - reduce divergence
+% could be solved by different methods - no collaboration of boolean formulas - reduce divergence
 % - reduce memory access - store the data in a different way
 
 % Or we can use cuda nvrtc to compile the boolean formulas on the fly. This would allow us to remove the memory access. Added compilation step amortized in the bigger and longer simulations.
@@ -575,7 +575,7 @@ The final implementation of the cross-correlation algorithm achieved a speedup o
 
 In Systems biology, the analysis of large and complex biological systems is a challenging task. \emph{Boolean models}~\cite{wang2012boolean} have gained popularity due to their simplicity, scalability, and ability to describe complex signaling networks. A Boolean model consists of $n$ nodes with binary values --- active or inactive. A node represents an event in the system, such as a gene being expressed or a protein being activated. The complete state of the system is, therefore, defined by a Boolean word composed of $n$ bits. The states can transition within each other based on $n$ Boolean formulae, one for each node. Given an initial state, the task of the model is to predict the probability distribution of system outcomes after a specified amount of time.
 
-Numerical methods, such as ExaStoLog~\cite{koltai2020exact}, have been developed and used to solve Boolean models; however, they are limited to relatively small models (tens of nodes) due to the exponential memory requirements. For larger models, it has proved to be much more efficient to approximate the results by simulation. A C++ software, MaBoSS~\cite{stoll2017maboss}, simulates these systems by applying the kinetic Monte-Carlo algorithm~\cite{stoll2012continuous} on the Boolean network. In summary, the MaBoSS tool simulates millions of random walks (also called the \emph{trajectories}) on the state space of the Boolean network (a directed weighted graph). Algorithm~\ref{alg:iter} provides a high-level view on how a trajectory is sampled. The trajectories are then aggregated in a histogram-like fashion to compute various statistics, such as the probability distribution of the states over time, as is shown on Figure~\ref{fig:maboss}.
+Numerical methods, such as ExaStoLog~\cite{koltai2020exact}, have been developed and used to solve Boolean models; however, they are limited to relatively small models (tens of nodes) due to the exponential memory requirements. For larger models, it has proved to be much more efficient to approximate the results by simulation. A C++ software, MaBoSS~\cite{stoll2017maboss}, simulates these systems by applying the kinetic Monte-Carlo algorithm~\cite{stoll2012continuous} on the Boolean network. In summary, the MaBoSS tool simulates millions of random walks (also called the \emph{trajectories}) on the state space of the Boolean network (a directed weighted graph). Algorithm~\ref{alg:iter} provides a high-level view of how a trajectory is sampled. The trajectories are then aggregated in a histogram-like fashion to compute various statistics, such as the probability distribution of the states over time, as is shown in Figure~\ref{fig:maboss}.
 
 \begin{algorithm}
     \caption{A single iteration of the MaBoSS simulation of a trajectory, given the trajectory state $S$ at time $t$.}
@@ -598,13 +598,13 @@ Due to the stochastic nature, this approach can overcome the limitations of nume
     \label{fig:maboss}
 \end{figure}
 
-Another performance challenge is the so-called \emph{mutant analysis}. In an existing model, a node is \emph{mutated} to a static value, losing the ability to change its state. This technique is used to predict the effect of a gene knockout or overexpression (a node value immutably set to $0$ or $1$ respectively). During the analysis, the same model is run $2n$ times to gain the predictions for all \emph{single} mutations (both suppressed and expressed). Naturally, this approach can be extended to research the effect of multiple mutants --- running the model with multiple nodes mutated at once. However, just single mutants analysis has been considered computationally expensive, subjecting double or triple mutants to a supercomputer-level task.
+Another performance challenge is the so-called \emph{mutant analysis}. In an existing model, a node is \emph{mutated} to a static value, losing the ability to change its state. This technique is used to predict the effect of a gene knockout or overexpression (a node value immutably set to $0$ or $1$, respectively). During the analysis, the same model is run $2n$ times to gain the predictions for all \emph{single} mutations (both suppressed and expressed). Naturally, this approach can be extended to research the effect of multiple mutants --- running the model with multiple nodes mutated at once. However, just single mutants analysis has been considered computationally expensive, subjecting double or triple mutants to a supercomputer-level task.
 
 \subsection{GPU acceleration challenges}
 
 Although the parallelization of MaBoSS may seem straightforward, it includes challenges that can significantly affect the overall performance. The main issue is the traversal of the binary expression tree to evaluate the Boolean formulae (Algorithm~\ref{alg:iter}, Line~2). Generally, traversing irregular data structures causes conditional branching and creates an irregular data access pattern (see \nameref{sec:divergence} and \nameref{sec:coalescing} in Section~\ref{sec:gpu_optim}). A combination of these issues may leave GPU heavily underutilized, gaining very little to no performance improvement over a well-parallelized CPU code.
 
-Thread divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads always to evaluate the whole expression.
+Thread divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads to evaluate the whole expression uniformly.
 The other possible approach would be to assign one formula to a thread. Naturally, this enables more parallelism but requires a more complex data structure to prevent thread divergence. The formulae need to be represented in the code so that each of their execution is issued as the same sequence of instructions. A way to achieve this is to convert formulas to CNF or DNF form and store them in the memory as a vector of bitmasks with a unified length.
 
 In our work, we partly followed the first approach. But instead of designing an ideal memory layout for the formulae, we used the \emph{CUDA NVRTC}~\cite{nvrtc-online} runtime compilation library to compile the formulas on the fly. It has the benefit of encoding the formulas into a native binary code, removing the necessity to fetch the data from the memory each time the formula is evaluated. Apart from that, the compiler can run a set of optimizations on the code, further improving the performance. Consequently, the runtime compilation comes at the cost of an additional runtime. Thankfully, our benchmarking showed that the compilation time amortizes well for simulations with reasonably big inputs.
@@ -615,9 +615,9 @@ The final implementation of the MaBoSS simulation achieved a speedup of $100-300
 
 \section{Summary}
 
-We have presented the works of bringing implementations of four scientific algorithms into HPC domain. Overall, the results have shown that employing GPUs to solve scientific problems can help the researches to push the boundaries of size, scale and complexity of analyzed data while leveraging the computational power of their GPU-equipped personal computers or laptops.
+We have presented the work of implementing four scientific algorithms in the HPC domain. Overall, the results have shown that employing GPUs to solve scientific problems can help researchers push the boundaries of the size, scale, and complexity of analyzed data while leveraging the computational power of their GPU-equipped personal computers or laptops.
 
-Further summarizing on the optimization used, it comes as no surprise that the most important aspect to consider when designing an optimized implementation is the memory. The memory complexity, memory access pattern, utilizing memory hierarchies and data caching were repeatedly occurring in our implementation designs and have contributed the most in the performance improvements. This is yet supported by the fact that the gap between computational power and memory bandwidth tends to widen~\cite{zhang2023perks}, causing more algorithms to be memory-bound making the memory optimization even more crucial in the future.
+Further summarizing the optimization used, it comes as no surprise that the most important aspect to consider when designing an optimized implementation is memory. Memory complexity, memory access patterns, memory hierarchies, and data caching repeatedly occurred in our implementation designs and have contributed the most to performance improvements. This is yet supported by the fact that the gap between computational power and memory bandwidth tends to widen~\cite{zhang2023perks}, causing more algorithms to be memory-bound, making memory optimizations even more crucial in the future.
 
 Therefore, we dedicate the second chapter of this thesis to the methods for streamlining memory-related optimizations, which we collected during our optimization efforts and found them to be effective in aiding HPC programmers in writing optimized CPU or GPU code from scratch.
 
@@ -650,7 +650,7 @@ Therefore, we dedicate the second chapter of this thesis to the methods for stre
 % - future work skor nie
 % -
 
-% ku intur hodit referencie idealne surveye
+% ku intur hodit reference idealne survey
 
 
 % vypychnut trochu viac algoritmy - odstavec o algoritme
