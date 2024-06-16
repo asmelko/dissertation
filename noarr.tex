@@ -441,7 +441,7 @@ But if the user wants to offload this task to a well-known field-tested parallel
   }
 \end{minted}
 
-The code sample further strengthens the benefit of named dimensions: The user can directly specify the dimension to parallelize over. This is even more visible when targeting parallel accelerators (such as GPUs) in which a programmer can select multiple dimensions to utilize thread hierarchies (see \nameref{sec:memory_hier} in \cref{sec:gpu_optim}):
+The code sample further strengthens the benefit of named dimensions: The user can directly specify the dimension to parallelize over. This is even more visible when targeting parallel accelerators (such as GPUs) in which a programmer can select multiple dimensions to utilize thread hierarchies (see \cref{sec:gpu_arch}):
 
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   auto A = make_bag(ptr_a, scalar<int>() ^ vector<'x', 'y'>(32, 1000));
