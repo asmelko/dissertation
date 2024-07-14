@@ -361,7 +361,7 @@ A good evidence of this fact is case studies that compared the effort of program
 
 \subsection{Noarr Traversers}
 
-The similarities in memory layout and its traversal led us to the development of our next contribution, \emph{Noarr Traversers}. It is based on the idea that every single loop, in some sequence of nested loops, can be interpreted as one (named) dimension in an index space domain. Assuming perfectly nested loops, such traversal can be interpreted as a Noarr layout and be subjected to the same transformations as a memory layout. To sum up, the key points of Noarr Traversers are as follows:
+The similarities in memory layout and its traversal led us to the development of our following contribution, \emph{Noarr Traversers}. The tool is based on the idea that every single loop, in some sequence of nested loops, can be interpreted as one (named) dimension in an index space domain. Assuming perfectly nested loops, such traversal can be interpreted as a Noarr layout and be subjected to the same transformations as a memory layout. To sum up, the key points of Noarr Traversers are as follows:
 \begin{itemize}
   \item \emph{Named dimensions} --- a traverser comprises named dimensions, each representing a loop in a sequence of nested loops.
   \item \emph{Proto-structures} --- exactly as with layouts, a traverser is subject to an extension using the same set of proto-structures.
@@ -389,7 +389,7 @@ The nested loops follow the order of $3$ present dimensions: $i$, $j$, and $k$ d
 \end{minted}
 The traverser accepts the layouts (or bags) it shall iterate over. It extracts $3$ unique dimensions \mintinline{c++}{'i'}, \mintinline{c++}{'j'} and \mintinline{c++}{'k'} and iterates over the index space composed of these dimensions as if they were written as a sequence of nested loops (which is equivalent to the cartesian product of these dimensions). The lambda function on Line~$6$ is then executed for each point in the index space, passing the tuple of indices as the \texttt{state} argument to the lambda.
 
-Due to the same concept of named dimensions, traverser and layout objects are \emph{isomorphic}. Consequently, changing the traversal order is done the same way as modifying the layout --- by applying the proto-structures to the traverser. E.g., to reorder the loops to a more cache-friendly \mintinline{c++}{'i'}, \mintinline{c++}{'k'}, \mintinline{c++}{'j'} order, the traversal can be rewritten as follows:
+Thanks to the dimension naming, traversers and layout objects are also \emph{isomorphic}. Consequently, changing the traversal order is done the same way as modifying the layout --- by applying the proto-structures to the traverser. E.g., to reorder the loops to a more cache-friendly \mintinline{c++}{'i'}, \mintinline{c++}{'k'}, \mintinline{c++}{'j'} order, the traversal can be rewritten as follows:
 \begin{minted}[fontsize=\footnotesize,breaklines,frame=leftline,linenos]{c++}
   traverser(A, B, C) ^ reorder<'i', 'k', 'j'>() | [=](auto state) {
     C[state] += A[state] * B[state];
@@ -466,7 +466,7 @@ The code sample further strengthens the benefit of named dimensions: The user ca
 
 \section{Summary}
 
-With the arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. The object-oriented design of the library allows writing complex memory optimizations in an extensible, reusable, and even layout-agnostic way, with very little space for errors. Further, the pure C++ implementation enables the usage of Noarr in C++-based frameworks, such as CUDA. The library has already been incorporated into our ongoing work of implementing a high-performance version of BioFVM~\cite{ghaffarizadeh2016biofvm}, a diffusion solver for 3D biological simulations, aiding in various loop transformations, vectorization, dividing the data into subdomains for parallelization, and other optimizations, all realized in a clean and self-documenting way\footnote{The code can be reviewed in the GitHub repository https://github.com/asmelko/paraBioFVM}.
+With the arsenal of proto-structures, Noarr provides options to specify many complex layouts and traversals. The object-oriented design of the library allows writing complex memory optimizations in an extensible, reusable, and even layout-agnostic way, with very little space for errors. Further, the pure C++ implementation enables the usage of Noarr in C++-based frameworks, such as CUDA. The library has already been incorporated into our ongoing work of implementing a high-performance version of BioFVM~\cite{ghaffarizadeh2016biofvm}, a diffusion solver for 3D biological simulations, aiding in various loop transformations, vectorization, dividing the data into subdomains for parallelization, and other optimizations, all realized in a clean and self-documenting way\footnote{The code is available from the GitHub repository https://github.com/asmelko/paraBioFVM}.
 
 We believe that our solution will add a new expressive tool to a high-performance programming toolset, simplifying the research focusing on tuning of prewritten computational kernels and building complex optimized parallel algorithms from scratch.
 

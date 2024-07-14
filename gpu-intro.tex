@@ -1,8 +1,8 @@
-\chapter{Introduction to GPU programming}
+\chapter{Overview of GPU programming}
 \label{chap:gpu_intro}
 
 
-Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures, or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms compared to ordinary CPUs. GPU chip semantics is oriented on high performance achieved by immense parallelism, with a design that promotes further scalability. Its die surface is largely occupied by compute cores with very little space dedicated to cache and control, which contradicts the CPU design (the graphical reference depicted in Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the solution is carefully designed for it~\cite{navarro2014survey}.
+Graphics Processing Units (GPUs) have evolved from specialized hardware designed solely for rendering graphics to powerful, general-purpose processors capable of handling complex computations. In the early years, 3D acceleration carts, as they used to be called, were devoted to offloading the rendering tasks, such as drawing pixels, filling polygons with textures, or computing geometry, from the CPU~\cite{pratx2011gpu}. And because processing pixels is inherently parallel, GPU architectures were being developed with different paradigms compared to ordinary CPUs. GPU chip semantics is oriented on high performance achieved by immense parallelism, with a design that promotes further scalability. Its die surface is largely occupied by compute cores with very little space dedicated to cache and control, which contrasts the CPU design (the graphical reference depicted in Figure~\ref{fig:cpu-gpu}). Thus, GPUs can be much more powerful than CPUs if the software is carefully designed for it~\cite{navarro2014survey}.
 
 The shift from specialized graphics processing to general-purpose computing was marked by the introduction of programming frameworks such as CUDA (Compute Unified Device Architecture) by NVIDIA and OpenCL (Open Computing Language) by Khronos group. As extensions to C/C++, these frameworks simplified the process of writing code for GPU and streamlined the adoption of GPU for general-purpose programming~\cite{croix2009introduction}. CUDA, in particular, has become the de facto standard for GPU programming due to its ease of use, performance, and wide adoption in the scientific community.
 
@@ -80,11 +80,11 @@ Strictly speaking, there are two ways how to decrease the gap between arithmetic
 \subsection{Memory hierarchy}
 \label{sec:memory_hier}
 
-A GPU thread hierarchy is accompanied by \emph{memory hierarchy}. As alluded in the previous paragraph, global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls measured in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. This process is generally called \emph{caching} but can be also interpreted as \emph{data sharing}, as the data is shared among threads in the same thread hierarchy.
+A GPU thread hierarchy is accompanied by \emph{memory hierarchy}. As alluded in the previous section, global off-chip memory has the highest latency and the lowest bandwidth. To avoid thread stalls measured in hundreds of cycles due to fetching data from global memory, other levels of memory hierarchies should be utilized. This process is generally called \emph{caching} but can be also interpreted as \emph{data sharing}, as the data is shared among threads in the same thread hierarchy.
 
 Depending on the desired level of data sharing within the thread hierarchy, programmers can use various types of memory (as depicted in Figure~\ref{fig:mem-hierarchy}). On a block level, on-chip shared memory can be accessed with a magnitude lower latency and higher bandwidth than global memory. In extreme data sharing cases, threads in the same warp can use the register file as a cache with close-to-zero zero latency. However, the higher the proximity of the specific memory type to the compute cores, the lower capacity it carries. Contemporary GPUs encompass $64$k of $32$B registers, $100-200$ kB of shared memory, and $8-16$ GB of global memory for consumer-grade GPUs and up to $80$ GB for the highest-end datacenter-grade GPUs.
 
-To sum up, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in a thread hierarchy such that faster memory levels are utilized. Moreover, since the ops-per-byte ratio is inversely proportional to the memory bandwidth, a program using shared memory or registers as caches does not carry such significant requirements on arithmetic intensity to achieve maximum performance.
+In summary, the key to achieving high performance on a GPU is to minimize global memory accesses by smartly dividing the work in the thread hierarchy such that faster memory levels are utilized. Moreover, since the ops-per-byte ratio is inversely proportional to the memory bandwidth, a program using shared memory or registers as caches does not impose such significant requirements on arithmetic intensity to achieve maximum performance.
 
 \begin{figure}
     \centering
@@ -98,7 +98,7 @@ To sum up, the key to achieving high performance on a GPU is to minimize global 
 
 Fetching data from global memory is serviced in up to $128$B wide transactions. If threads in a warp request a single byte, the GPU will fetch the whole transaction chunk, wasting the memory bandwidth on data that will never be used and negatively impacting the ops-per-byte ratio. To utilize the memory bandwidth fully, the aggregated memory accesses in a lockstep should coalesce into continuous memory locations. Figure~\ref{fig:coal} illustrates this concept.
 
-In practice, whether memory is transferred in an optimal number of transactions is directly influenced by the layout of the data structures in use. One example may include using a column-major layout for the right-hand side matrix in matrix multiplication or avoiding the usage of linked lists.
+In practice, the main factor influencing the memory transaction optimality is the layout of the utilized data structures. Examples include using a column-major layout for the right-hand side matrix in matrix multiplication or avoiding the usage of linked lists.
 
 \begin{figure}[b]
 	\centering
@@ -126,9 +126,10 @@ In true data-parallel algorithms, this is generally not a big issue because thes
 \subsection{Thread divergence}
 \label{sec:divergence}
 
-The downside of the highly parallel SIMT architecture is handling diverging execution paths in the code. If threads in a warp take different \texttt{if} or their iteration count over a \texttt{while} loop does not match, the execution of these diverging paths will be serialized, as depicted in Figure~\ref{fig:divergence}.
+The downside of the highly parallel SIMT architecture is the necessity to handle the divergence of execution paths in the code.
+If threads in a warp take different \texttt{if}-branch or their iteration count over a \texttt{while} loop does not match, the execution of these diverging paths will be serialized, as depicted in Figure~\ref{fig:divergence}.
 
-Intra-warp branching should be avoided to keep the number of active threads high for the longest amount of time. Divergence can be mitigated by lifting the branching to the inter-warp level, replacing branches with arithmetic operations if possible, or unrolling warp-wise loops.
+To keep the number of active threads high throughout the program execution, intra-warp branching must be avoided or minimized. Techniques that mitigate the divergence include lifting the branching to the inter-warp level, replacing branches with arithmetic operations, and unrolling warp-wise loops.
 
 \begin{figure}
     \centering
@@ -144,10 +145,10 @@ The GPU is designed to run thousands of threads in parallel and tens of thousand
 
 The number of concurrent threads per SM is called the \emph{thread occupancy}. It denotes the ratio of active threads to the maximum number of threads that can be executed concurrently on an SM. This metric is influenced by the resource requirements of a program: Increasing the shared memory usage per block or register usage per thread decreases the thread occupancy, which in turn decreases the parallel capacity of the GPU device.
 
-However, a GPU code that achieves high thread occupancy uses less on-chip resources, so it is required to use slower global memory more often, which in turn decreases the computational efficiency of a thread. Thus, thread occupancy and thread efficiency compete with each other, and their optimal ratio for a given hardware should be finely tuned to achieve the best performance.
+Conversely, a GPU program that achieves high thread occupancy uses less on-chip resources, which in turn forces it to use the (slower) global memory more often, and the computational efficiency of its threads is thus lower. Thus, thread occupancy and thread efficiency compete with each other, and their optimal ratio for a given hardware must be optimized to balance this trade-off.
 
 \section{Summary}
 
-These are a few of the most dominant optimization techniques used in GPU programming. For the past few years, GPU hardware has evolved extraordinarily rapidly to satisfy the demand for hardware that can train artificial intelligence models with billions of parameters. This has brought many new features, making the device more versatile and powerful. Let it be more advanced SMs, independent thread scheduling, \emph{block cluster}, which brings a new element in the thread and memory hierarchy, specialized matrix multiplication-optimized \emph{tensor cores}, which increase ops-per-byte ratio ten-fold, or \emph{tensor memory access}, which allow asynchronous copying of non-sequential data efficiently, \dots
+This chapter summarized the most dominant optimization techniques used in GPU programming. For the past few years, GPU hardware has evolved extraordinarily rapidly to satisfy the demand for hardware that can train artificial intelligence models with billions of parameters. This has brought many new features, making the device more versatile and powerful. Let it be more advanced SMs, independent thread scheduling, \emph{block cluster}, which brings a new element in the thread and memory hierarchy, specialized matrix multiplication-optimized \emph{tensor cores}, which increase ops-per-byte ratio ten-fold, or \emph{tensor memory access}, which allow asynchronous copying of non-sequential data efficiently, \dots
 
-In summary, the field of GPU programming is vast, and optimization techniques are often intertwined and compete with each other. The optimal solution is usually a compromise between the techniques, which is highly dependent on the specific properties of the problem. In the following chapter, we will describe our work of porting scientific algorithms to GPUs using the terminology and knowledge established in this section as guidelines to detail the main optimization challenges for each of them.
+In perspective, the field of GPU programming is vast, and optimization techniques are often intertwined and compete with each other. The optimal solution is usually a compromise between the techniques, which is highly dependent on the specific properties of the problem. In the following chapter, we will describe our work of porting scientific algorithms to GPUs using the terminology and knowledge established in this section as guidelines to detail the main optimization challenges for each of them.
