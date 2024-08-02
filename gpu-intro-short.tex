@@ -1,0 +1,54 @@
+\chapter{Overview of GPU programming}
+\label{chap:gpu_intro}
+
+In this chapter, we provide an overview of the GPU hardware architecture and the CUDA programming model. We also discuss the main optimization techniques used in GPU programming, which are essential for achieving high performance on GPUs. The knowledge presented in this chapter serves as a foundation for the subsequent chapters, where we detail the GPU optimizations of scientific algorithms and describe the parallelization use-cases of the Noarr library.
+
+\section{GPU Hardware Architecture and Programming Model}
+\label{sec:gpu_arch}
+
+
+The main building block of a GPU is the \emph{Streaming Multiprocessor} (SM). SM couples hundreds of compute cores, a register file, L1 cache also called \emph{shared memory}, and schedulers responsible for independent scheduling of groups of threads. There are multiple SMs in a GPU, their number highly correlating with the overall GPU cost.
+
+The abstraction of this highly parallel architecture is based on organizing threads into hierarchical levels. The basic units of execution are \emph{threads}. These are organized into \emph{blocks}, groups of threads \emph{executed on the same SM}, sharing a register file and the shared memory. Lastly, a group of blocks that is executed independently on multiple SMs is called a \emph{grid}.
+
+Conceptually, this programming model is based on \emph{Single Instruction, Multiple Data} (SIMD) architecture, which is a type of parallel processing where a single instruction is executed on multiple data streams. In practice, SM issues threads in groups of $32$, called \emph{warps}, which execute in \emph{lockstep} --- all performing the same instruction at once. A more accurate description of this type of processing is \emph{Single Instruction, Multiple Threads} (SIMT), which is nowadays used to describe the GPU programming model.
+
+\section{Optimizing for GPU performance}
+\label{sec:gpu_optim}
+
+Correctly applying the rich feature set of these massively-parallel machines is not trivial, as it requires a deep understanding of the architecture and programming model. Thus, achieving optimal performance on a GPU requires careful consideration of various aspects. Let us detail the most important ones to watch for when optimizing GPU code~\cite{pratx2011gpu}.
+
+\paragraph{Arithmetic intensity}
+\label{sec:arithmetic_int}
+
+One of the most important constants in GPU programming is \emph{ops-per-byte} ratio ---  the ratio of math and memory bandwidth, and it simply determines how many math operations per transferred byte must be executed to achieve the theoretical maximum performance. For example, NVIDIA V100 datacenter GPU reaches $\approx15$ ops-per-byte ratio. As a simple rule of thumb, a program that performs less than $60$ single-precision floating point operations per single $4$-byte load/store will be \emph{memory-bound} and a program that performs more operations will be \emph{compute-bound}. Such a property of a program is called \emph{arithmetic intensity} and is a key factor in determining the performance of a GPU kernel.
+
+\paragraph{Memory hierarchy}
+\label{sec:memory_hier}
+
+Depending on the desired level of data sharing within the thread hierarchy, programmers can use various types of memory. On a block level, on-chip shared memory can be accessed with a magnitude lower latency and higher bandwidth than global memory. In extreme data sharing cases, threads in the same warp can use the register file as a cache with close-to-zero latency. However, the higher the proximity of the specific memory type to the compute cores, the lower capacity it carries. Contemporary GPUs encompass $64$k of $32$B registers, $100-200$ kB of shared memory, and $8-16$ GB of global memory for consumer-grade GPUs and up to $80$ GB for the highest-end datacenter-grade GPUs.
+
+\paragraph{Memory coalescing}
+\label{sec:coalescing}
+
+Fetching data from global memory is serviced in up to $128$B wide transactions. If threads in a warp request a single byte, the GPU will fetch the whole transaction chunk, wasting the memory bandwidth on data that will never be used and negatively impacting the ops-per-byte ratio. To utilize the memory bandwidth fully, the aggregated memory accesses in a lockstep should coalesce into continuous memory locations.
+
+\paragraph{CPU--GPU data transfers}
+\label{sec:transfers}
+
+Transferring data between CPU and GPU memory spaces can pose a significant bottleneck when developing GPU programs. Usually, the interconnect which is used to transfer data between the CPU and the GPU has a much lower bandwidth even than the GPU global memory. Therefore, it is essential to avoid redundant data transfers between the host and the device.
+
+In true data-parallel algorithms, this is generally not a big issue because these data transfers can be overlapped with computation. Such overlapping is possible by GPU \emph{task queues}, which allow the execution of multiple programs as well as CPU--GPU memory transfers in parallel. This hardware feature is exposed by the software abstraction called \emph{streams}.
+
+\paragraph{Thread divergence}
+\label{sec:divergence}
+
+The downside of the highly parallel SIMT architecture is the necessity to handle the divergence of execution paths in the code.
+If threads in a warp take different \texttt{if}-branch or their iteration count over a \texttt{while} loop does not match, the execution of these diverging paths will be serialized.
+
+\paragraph{Thread occupancy}
+\label{sec:occupancy}
+
+A single SM can accommodate thousands of concurrent threads, although the number of accommodable cores is a magnitude lower. The SM takes advantage of this high discrepancy to aggressively context switch between different warps when the currently scheduled ones are waiting for a latency. Since all the thread contexts reside on-chip, the context switch has negligible overhead, and, provided there are enough available concurrent threads, it can effectively hide the memory latencies.
+
+The number of concurrent threads per SM is called the \emph{thread occupancy}. This metric is influenced by the resource requirements of a program. Conversely, a GPU program that achieves high thread occupancy uses less on-chip resources, which in turn forces it to use the (slower) global memory more often, and the computational efficiency of its threads is thus lower.

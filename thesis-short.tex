@@ -1,0 +1,143 @@
+
+\documentclass[10pt, twoside, openright, a5paper]{report}
+\let\openright=\cleardoublepage
+
+\usepackage[a-2u]{pdfx}
+
+\usepackage{fontspec}
+\setmainfont{Libertinus Serif}
+\setsansfont{Libertinus Sans}
+\newfontfamily\figfamily{Libertinus Serif}
+\setmonofont{IBM Plex Mono Light}[BoldFont={IBM Plex Mono Semibold}, Ligatures=CommonOff,Scale=0.86]
+
+
+\usepackage[textwidth=4.5in]{geometry}
+
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{unicode-math}
+\usepackage{pdfpages}
+\usepackage{graphicx}
+\usepackage{marginnote}
+\usepackage{ifoddpage}
+\usepackage[all]{nowidow}
+\usepackage[shortlabels]{enumitem}
+
+\usepackage{listings}
+
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{caption}
+\DeclareCaptionFont{fig}{\figfamily}
+\captionsetup{font={footnotesize,fig},labelfont=bf,labelsep=quad}
+\DeclareCaptionStyle{ruled}{font={footnotesize,fig},labelfont=bf,labelsep=quad,strut=off}
+
+\usepackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+\usepackage[natbib,style=ext-numeric-comp,sorting=none,articlein=false,maxnames=6,maxcitenames=1]{biblatex}
+
+\addbibresource{bibliography.bib}
+\addbibresource{myrefs.bib}
+%\DeclareNameAlias{sortname}{family-given}
+%\DeclareNameAlias{default}{family-given}
+\DeclareFieldFormat*{volume}{\mkbibbold{#1}}
+\DeclareDelimFormat{namelabeldelim}{~}
+\renewcommand*{\bibfont}{\scriptsize}
+
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,decorations.markings,positioning,calc,arrows.meta,matrix,fit,decorations.pathreplacing}
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+
+\usepackage{chemfig}
+
+\usepackage{minted}
+\usemintedstyle{vs}
+\colorlet{LightGray}{black!3}
+\newmintedfile[inputmintedcpp]{c++}{bgcolor=LightGray,tabsize=2,fontsize=\scriptsize,linenos,breaklines,escapeinside=\#\#}
+\def\FancyVerbVspace{0pt}
+\AtBeginEnvironment{minted@colorbg}{\setlength{\medskipamount}{0pt}}
+
+\usepackage{subcaption}
+
+\newcommand{\xxx}[1]{\textcolor{red}{#1}}
+
+% Thesis title in English (exactly as in the formal assignment)
+\def\ThesisTitle{Employing Parallel Computing in Data-Intensive Tasks}
+
+% Author of the thesis
+\def\ThesisAuthor{Adam Šmelko}
+
+% Year when the thesis is submitted
+\def\YearSubmitted{2024}
+
+% Name of the department or institute, where the work was officially assigned
+% (according to the Organizational Structure of MFF UK in English,
+% or a full name of a department outside MFF)
+\def\Department{Department of Distributed and Dependable Systems}
+
+% Is it a department (katedra), or an institute (ústav)?
+\def\DeptType{Department}
+
+% Thesis supervisor: name, surname and titles
+\def\Supervisor{Martin Kruliš}
+
+% Supervisor's department (again according to Organizational structure of MFF)
+\def\SupervisorsDepartment{Department of Distributed and Dependable Systems}
+
+% Study programme and specialization
+\def\StudyProgramme{Computer Science --- Software Systems}
+
+% An optional dedication: you can thank whomever you wish (your supervisor,
+% consultant, a person who lent the software, etc.)
+\def\Dedication{%
+I dedicate this thesis to my family, friends, and colleagues who have supported me throughout my studies.
+
+I thank colleagues from Department of Bioinformatics, Department of Physics of Materials, LCSB, BSC, Institut Curie, and especially colleagues from my department for great challenges and research opportunities they have brought. I extend my gratitude to my closest friends for their support, vivid discussions over drinks and food, and for keeping my (in)sanity at bay. I thank Nikola, who has always been there for me, and my family for their unconditional love and support.
+
+Most importantly, I would like to thank my supervisor, Martin Kruliš, for his guidance, patience, and valuable feedback. His professional mentorship has been invaluable to me, and I am grateful for the opportunity to work with him.
+}
+
+% Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
+\def\Abstract{%
+This thesis studies, develops, and investigates the optimization of data-intensive scientific algorithms using Graphics Processing Units (GPUs) to enhance performance and scalability. The first part of the thesis focuses on the design and implementation of optimized kernels for four key algorithms: hierarchical clustering with Mahalanobis linkage, neighborhood-based dimensionality reduction through EmbedSOM, optimization of cross-correlation algorithms for many small inputs, and stochastic simulation of Boolean networks. In the second part, the thesis builds upon the findings of the first part to propose a Noarr library, which enables the efficient development of high-performance computing (HPC) applications. It emphasizes the critical role of memory optimization in achieving significant performance improvements in HPC and aims to streamline the implementation of these optimizations by providing a novel memory layout and traversal optimization framework. The main contributions of this thesis comprise the implementation of novel GPU optimization techniques, performance improvements of scientific tools of up to three orders of magnitude speedup, advancing data analysis and visualization in bioinformatics and material physics, and the design of new tools for efficient expression of data structure layout and traversal in HPC code. The results of this thesis may be used to enhance the development process of maintainable and efficient HPC applications and guide future research in the field of data-intensive scientific computing.
+}
+
+% 3 to 5 keywords (recommended), each enclosed in curly braces
+\def\Keywords{%
+{GPGPU}, {HPC}, {hierarchical clustering}, {cross-correlation}, {memory optimizations}, {loop transformations}
+}
+
+\hypersetup{unicode}
+\hypersetup{breaklinks=true}
+\hypersetup{hidelinks}
+
+\usepackage[capitalize]{cleveref}
+
+\include{macros}
+\usepackage{titlesec}
+\titlespacing*{\chapter}{0pt}{0ex}{2ex}
+\titleformat{\chapter}{\LARGE\bfseries\sloppy}{\thechapter}{1em}{}{}
+\makeatletter\@openrightfalse\makeatother
+
+\begin{document}
+\include{title-short}
+\tableofcontents
+
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\include{introduction-short}
+\include{gpu-intro-short}
+\include{gpu-optims-short}
+\include{noarr}
+\include{outro}
+\include{bibliography}
+\include{publications-short}
+
+\openright
+\end{document}

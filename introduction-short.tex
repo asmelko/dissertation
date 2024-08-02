@@ -1,0 +1,8 @@
+\chapwithtoc{Overview}
+
+This thesis contributes to addressing the challenges of General-purpose GPU programming (GPGPU programming) in two interconnected topics:
+Firstly, the thesis couples a set of data-intensive scientific algorithms and their GPU optimizations; each contains a detailed discussion of their concurrency opportunities, memory operation analyses, and the choice of the most suitable optimization variant. Each work employs a slightly different tool in the GPU programming toolbox, showing the suitability and impact on different problems.
+In the second part of the thesis, Noarr library is introduced, which builds upon the findings and expertise gained from the results of the previous part. We identified that the primary factor of many optimizations is the order of accessing data in the memory, generally referred to as \emph{memory optimizations}.
+Noarr introduces reusable memory layouting primitives and provides a way to compose and traverse them in a customizable manner. The main goal of the library is to aid in writing more expressive, maintainable, and modular HPC code.
+
+The thesis is accordingly divided into 2 larger sections, prepended by the introductory section to GPU programming. The appendix contains the reprints of the peer-reviewed publications supporting the contributions of this thesis (not present in this summary).
