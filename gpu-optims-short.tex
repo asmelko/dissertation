@@ -8,7 +8,6 @@ This chapter summarizes the process of porting several specific scientific algor
 \label{sec:maha}
 
 Hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some \emph{linkage criterion}.
-Clustering is an iterative method that begins with each data point interpreted as a single cluster and, in each iteration, the two most similar clusters are merged with respect to a linkage criterion until a single cluster remains.
 In the domain of bioinformatics, hierarchical clustering with the \emph{Mahalanobis linkage} is used, which is a more sophisticated method suitable for analyzing multidimensional single-cell cytometry datasets.
 
 Mahalanobis linkage, proposed by Fišer et al.~\cite{fivser2012detection}, allows for a very natural formation of clusters in biological data. However, the benefits come at a cost of high time and space complexity. The authors claim the upper usable bound of dataset size to be $10^4$ using the original \texttt{C} application. They state that the quadratic space complexity makes for the most significant limiting factor, leaving it unfeasible to analyze bigger datasets on current desktop computers.
@@ -33,7 +32,7 @@ Only when the objects of a cluster form a spherical shape, this dissimilarity me
     \label{fig:ellipses}
 \end{figure}
 
-The standard Hierarchical Clustering, which utilizes a dissimilarity matrix, has a time complexity of $\mathcal{O}(n^3)$ and space complexity of $\mathcal{O}(n^2)$. There are other variants of HC which use a different method for the closest cluster pair retrieval and the amount of distances to recompute after each iteration. Other variants include HC with the nearest neighbor array, which trades the linear memory complexity for a worse time complexity on average, or the HC with priority queues, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$ for the sake of bigger memory requirements~\cite{day1984efficient}.
+The standard Hierarchical Clustering (HC), which utilizes a dissimilarity matrix, has a time complexity of $\mathcal{O}(n^3)$ and space complexity of $\mathcal{O}(n^2)$. There are other variants of HC which use a different method for the closest cluster pair retrieval and the amount of distances to recompute after each iteration. Other variants include HC with the nearest neighbor array, which trades the linear memory complexity for a worse time complexity on average, or the HC with priority queues, which reduces the time complexity to $\mathcal{O}(n^2 \log n)$ for the sake of bigger memory requirements~\cite{day1984efficient}.
 
 \subsubsection{Implementation}
 
@@ -48,32 +47,15 @@ The optimized Mahalanobis HC achieves a speedup of over $1400\times$ compared to
 
 
 
-\section{Neighborhood-based dimensionality reduction}
+\section{Neighborhood-based dim. reduction}
 \label{sec:embedsom}
 
 
-Complementary to hierarchical clustering, a different approach to displaying cytometry datasets is \emph{dimensionality reduction} (also called \emph{embedding}), in which multidimensional cells are projected into a 2-dimensional plane, a picture, which shows cells arranged in groups with common properties. This methodology allows for a fast and reliable way to analyze cell populations, their relative size, and the presence of various features.
+Complementary to hierarchical clustering, a different approach to displaying cytometry datasets is \emph{dimensionality reduction} (also called \emph{embedding}), in which multidimensional cells are projected into a 2-dimensional plane, a picture, which shows cells arranged in groups with common properties.
 
-The currently used dimensionality reduction tools are typically based on the principle of optimizing a low-dimensional embedding while preserving high-dimensional properties of interest. However, the most popular tools following this methodology, such as t-SNE~\cite{maaten2008visualizing}, UMAP~\cite{becht2019dimensionality} or TriMAP~\cite{amid2019trimap}, can suffer poor performance on large data due to the need to examine a nontrivial subset of $\binom{n}{2}$ relations (such as the pairwise distances) between $n$ data points~\cite{kratochvil2019generalized}. \emph{EmbedSOM} algorithm, introduced by Kratochvíl et al.~\cite{kratochvil2019generalized}, is designed to overcome this limitation. The costly parts of the previous methods can be omitted by creating a smaller model of the data obtained (not exclusively) by \emph{self-organizing maps}. EmbedSOM uses the information of such an approximated manifold to compute the final embedding, retaining a competitive quality of the visualization.
+The currently used dimensionality reduction tools are typically based on the principle of optimizing a low-dimensional embedding while preserving high-dimensional properties of interest. However, the most popular tools following this methodology, such as t-SNE~\cite{maaten2008visualizing}, UMAP~\cite{becht2019dimensionality} or TriMAP~\cite{amid2019trimap}, can suffer poor performance on large data due to the need to examine a nontrivial subset of $\binom{n}{2}$ relations (such as the pairwise distances) between $n$ data points~\cite{kratochvil2019generalized}. \emph{EmbedSOM} algorithm, introduced by Kratochvíl et al.~\cite{kratochvil2019generalized}, is designed to overcome this limitation. The costly parts of the previous methods can be omitted by creating a smaller model of the data obtained by \emph{self-organizing maps}. EmbedSOM uses the information of such an approximated manifold to compute the final embedding, retaining a competitive quality of the visualization.
 
-Algorithm~\ref{alg01:esom} shows the overview of EmbedSOM. It assumes a set of $n$ high-dimensional points $X \in \R^{n \times d}$ and the smaller data model: a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional landmarks $l \in \R^{g \times 2}$. For each input point, $k < g$ nearest landmarks from $L$ are found and assigned scores according to their distance. Finally, we compute the embedding such that the difference between distances from $l$ landmarks and the embedded point and $L$ landmarks and the original point is minimized. The minimization problem is reducible to a linear system of equations with two variables.
-
-\begin{algorithm}[t]
-    \caption{EmbedSOM}
-    \label{alg01:esom}
-    \begin{algorithmic}[1]
-        \Procedure{EmbedSOM}{$X\in\R^{n\times d}$, $L\in\R^{g\times d}$, $l\in\R^{g\times 2}$, $k\in\N$}
-        \For {$i \in \{1\dots n\}$} \Comment{For each high-dimensional point}
-            \State Find $k$ nearest landmarks from $L$
-            \State Score the $k$ nearest landmarks according to the distance to $X_i$ with $s_1, \dots, s_k$
-            \For {$(u,v) \in \{1,\dots,k\}^2$ } \Comment{For each pair of nearest landmarks}
-                \State Compute $D_{uv}(X_i)$ by projecting $X_i$ orthogonally onto a line between $L_u$ and $L_v$; We define $d_{uv}(x)$ similarly for $l_u$ and $l_v$
-            \EndFor
-            \State Find $x_i$, such that $\sum_{u, v} s_u \cdot s_v \cdot (D_{uv}(X_i) - d_{uv}(x_i))$ is minimized
-        \EndFor
-        \EndProcedure
-    \end{algorithmic}
-\end{algorithm}
+Let us overview the EmbedSOM algorithm. It assumes a set of $n$ high-dimensional points $X \in \R^{n \times d}$ and the smaller data model: a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional landmarks $l \in \R^{g \times 2}$. For each input point, $k < g$ nearest landmarks from $L$ are found and assigned scores according to their distance. Finally, we compute the embedding such that the difference between distances from $l$ landmarks and the embedded point and $L$ landmarks and the original point is minimized. The minimization problem is reducible to a linear system of equations with two variables.
 
 \subsubsection{Interactive opportunities of GPU implementation}
 
@@ -85,13 +67,13 @@ The embedding part of EmbedSOM does not offer such caching opportunities, as eac
 
 \subsubsection{Results}
 
-After the thorough benchmarking process, we selected the most performing variants of both steps and combined them into a complete implementation of the EmbedSOM algorithm. We increased the performance by $200-1000\times$ over the serial CPU version and $3-10\times$ over a na\"{i}ve GPU implementation. Furthermore, the achieved speedup enabled the interactive data visualization and was integrated into the graphical application \emph{BlosSOM}~\cite{molnarova2023throughput}. Thanks to the improved performance, the application can project datasets of up to a million points with a maintained frame rate above $30$ frames per second on consumer hardware. This contribution pushes the boundary of EmbedSOM into a semi-supervised dimensionality reduction domain, allowing users to effectively and intuitively visualize data with real-time feedback.
+Using the aforementioned optimizations, we increased the performance by $200-1000\times$ over the serial CPU version and $3-10\times$ over a na\"{i}ve GPU implementation. Furthermore, the achieved speedup enabled the interactive data visualization and was integrated into the graphical application \emph{BlosSOM}~\cite{molnarova2023throughput}. Thanks to the improved performance, the application can project datasets of up to a million points with a maintained frame rate above $30$ frames per second on consumer hardware. This contribution pushes the boundary of EmbedSOM into a semi-supervised dimensionality reduction domain, allowing users to effectively and intuitively visualize data with real-time feedback.
 
 
 \section{Cross-correlation optimized for small inputs}
 \label{sec:cross-correlation}
 
-Leaving the realm of cytometry data analysis, we will focus on a highly data-bound problem: cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, material physics, and, with the advent of convolutional neural networks, machine learning. As one interpretation, it computes a similarity of two data series obtained by sliding one over the other and computing the dot product of the overlapping parts.
+Leaving the realm of cytometry data analysis, we will focus on a highly data-bound problem: cross-correlation. This algorithm is a cornerstone of many scientific fields, such as image processing, seismology, material physics, and, with the advent of convolutional neural networks, machine learning.
 
 The problem of cross-correlation performance was initially introduced to us by the physicists from the Department of Physics of Material at Charles University in Prague. They used the algorithm to analyze the diffraction pattern of metallic alloys from electron backscatter diffraction (EBSD) cameras to obtain the material \emph{deformation}. That can be used to study the material characteristics, such as elastic strain or lattice rotation.
 
@@ -114,22 +96,11 @@ Figure~\ref{fig:cross-correlation} depicts the visual representation of the equa
 
 For general $w \times h$ matrices, the cross-correlation has a time complexity of $\mathcal{O}(w^2 \cdot h^2)$. Alternatively, the input can be modified and passed to the Fast Fourier Transform (FFT) with a more pleasing time complexity of $\mathcal{O}(w\cdot h \cdot \log(w\cdot h))$. However, the hidden multiplicative factor, which materializes as an overhead in the implementations of FFT, favors the original, definition-based approach for small problem sizes.
 
-To assess the optimality of the trivial implementation, let us compute the arithmetic intensity of a single overlap computation. For $n$ overlapped element pairs, we need to perform $n$ fused multiply-add operations. Considering the elements are represented as $4$B single-precision floating points, the arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$. In Section~\ref{sec:arithmetic_int}, we detail that the ops-per-byte ratio of the modern NVIDIA V100 GPU is around $15$ for single-precision floats. Since $\frac{1}{8} < 15$, the implementation of such an algorithm will be highly memory-bound.
-
 \subsubsection{Optimization techniques}
 
-With this in mind, we experimented with extreme data reuse techniques. There are many opportunities where the same data is read multiple times:
-\begin{itemize}
-    \item When computing neighboring overlaps, most data from left and right matrices are read multiple times.
-    \item In the $1:N$ scenario, when cross-correlating one left matrix with many right matrices, the data from the left matrix is read multiple times when computing the same overlap between multiple right matrices.
-    \item In the $N:M$ scenario, multiple left and right matrices can be read once to compute overlaps between all of them.
-\end{itemize}
+Assesing a na\"{i}ve algorithm, its arithmetic intensity equals to $\frac{n}{2n * 4} = \frac{1}{8}$ for single-precision floats. With this in mind, we experimented with extreme data reuse techniques. There are many opportunities where the same data is read multiple times: When computing neighboring overlaps, most data from left and right matrices are read multiple times. As another possibility, in the $1:N$ or $N:M$ scenario, when cross-correlating one or multiple left matrices with many right matrices, a piece of data can be read once to compute multiple overlaps.
 
-With such techniques, the arithmetic intensity is theoretically unbounded, provided an infinitely big input. However, the physical resources limit the practical values of the reuse factor. The most important resource is the register file. In order to reuse data, threads need to have them stored in the registers. The number of registers is limited, and the compiler can spill the data into slower memory if the limit is reached. Also, if the amount of resources per thread is high, the occupancy of the GPU can drop, and the achievable performance can decrease.
-
-The other big issue is the parallelism. Naturally, if one worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, the most effective implementation maintains the optimal balance between data sharing and parallelism.
-
-In our implementation, we took GPU-specific advantage of even faster memory than shared memory, register file itself, to cache the data. The GPU register file is rather big, having $65536$ $32$B registers. However, the caching possibilities on thread registers are very limited. They are only allowed on a warp level and allow only a specific access pattern. Still, they provide a higher throughput than the closest cache, the shared memory.
+In order to reuse data, threads need to have them stored in the registers. The number of registers is limited, and the compiler can spill the data into slower memory if the limit is reached. Also, if the amount of resources per thread is high, the occupancy of the GPU can drop, and the achievable performance can decrease. The other big issue is the parallelism. Naturally, if one worker performs multiple operations for the sake of sharing, the parallelism decreases. Therefore, the most effective implementation maintains the optimal balance between data sharing and parallelism.
 
 \subsubsection{Results}
 
@@ -157,10 +128,8 @@ Due to the stochastic nature, this approach can overcome the limitations of nume
 
 Although the parallelization of MaBoSS may seem straightforward, it includes challenges that can significantly affect the overall performance. The main issue is the traversal of the binary expression tree to evaluate the Boolean formulae requred to sample transition probabilities. Generally, traversing irregular data structures causes conditional branching and creates an irregular data access pattern (refers to \nameref{sec:divergence} and \nameref{sec:coalescing} in Section~\ref{sec:gpu_optim}). A combination of these issues may leave GPU heavily underutilized, gaining very little to no performance improvement over a well-parallelized CPU code.
 
-Thread divergence can be mitigated by cleverly distributing formulae evaluations among the threads. The most straightforward approach is to assign all $n$ formulae computations to a single thread such that the threads execute the same formula in each step. The divergence within the evaluation of the same formula can be solved by turning off short-circuiting optimization and enforcing the threads to evaluate the whole expression uniformly.
-The other possible approach would be to assign one formula to a thread. Naturally, this enables more parallelism but requires a more complex data structure to prevent thread divergence. The formulae need to be represented in the code so that each of their execution is issued as the same sequence of instructions. A way to achieve this is to convert formulas to CNF or DNF form and store them in the memory as a vector of bitmasks with a unified length.
 
-In our work, we partly followed the first approach. But instead of designing an ideal memory layout for the formulae, we used the \emph{CUDA NVRTC}~\cite{nvrtc-online} runtime compilation library to compile the formulas on the fly. It has the benefit of encoding the formulas into a native binary code, removing the necessity to fetch the data from the memory each time the formula is evaluated. Apart from that, the compiler can run a set of optimizations on the code, further improving the performance. Consequently, the runtime compilation comes at the cost of an additional runtime. Thankfully, our benchmarking showed that the compilation time amortizes well for simulations with reasonably big inputs.
+In our work, we used the \emph{CUDA NVRTC}~\cite{nvrtc-online} runtime compilation library to compile the formulas on the fly. It has the benefit of encoding the formulas into a native binary code, removing the necessity to fetch the data from the memory each time the formula is evaluated. Apart from that, the compiler can run a set of optimizations on the code, further improving the performance. Consequently, the runtime compilation comes at the cost of an additional runtime. Thankfully, our benchmarking showed that the compilation time amortizes well for simulations with reasonably big inputs.
 
 \subsubsection{Results}
 
@@ -174,43 +143,3 @@ Further summarizing the optimization used, it comes as no surprise that the most
 
 Therefore, we dedicate the second chapter of this thesis to the methods for streamlining memory-related optimizations, which we collected during our optimization efforts and found them to be effective in aiding HPC programmers in writing optimized CPU or GPU code from scratch.
 
-
-% thesis is organized as follows
-
-% tam pridat paragraf ku kazdemu clanku
-
-% a az na koniec 1
-
-% viac zrovnanie
-
-% preco su tieto alg tazke
-
-% pitfally co sa stanu ked implementujes na gpu
-
-% v inter tiez dokladne povedat preco to mame rozdelene na scientific aglos + noarr
-
-
-
-% gPu science
-% - ukazat preco je to zaujimave
-% - ze to je potrebne pre biologov
-% - ze to zlepsuje situaciu pre vyskum
-% - ze je to zaujimavy problem - takze asi spomenut ake boli doterajsie limitacie
-% - ukazat ze to je fakt tazky - popisat, co si to vyzadovalo, ake to malo problemy, ma to vela moznosti kde to paralelizovat, vsetky popisat
-% - ale na vysokej urovni - zhrnut a vysvetlit ze to je tazke
-% - na zaver poplacat na zadech - zrychlili sme to 1000x
-
-% - future work skor nie
-% -
-
-% ku intur hodit reference idealne survey
-
-
-% vypychnut trochu viac algoritmy - odstavec o algoritme
-% zahodit preface
-% namiesto part 2 apendix
-% do GPU intro pridat tie najvacie problemy skrz gpu optims a v sekciach sa na ne odkazovat
-% to otvori dvere aj conclusion - urcim tie najvacsie problemy, poviem ako pomalsia je pamat wrt compute
-% bibliography za part 1 a nie az za clanky
-% obrazok ku kazdemu clanku (mozno graf do results, mozno pre lepsiu vizualizaciu problemu)
-% viac citacii - najma v intre
