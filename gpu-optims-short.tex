@@ -1,10 +1,10 @@
-\chapter{Employing GPUs in scientific algorithms}
+\chapter[Employing GPUs in scientific algorithms]{Employing GPUs in scientific alg.}
 \label{chap:gpu}
 
 
 This chapter summarizes the process of porting several specific scientific algorithms to GPUs and uses these to exemplify the challenges of optimizing for GPU architectures.
 
-\section{Hierarchical clustering with the Mahalanobis linkage}
+\section[Mahalanobis-linkage hierarchical clustering]{Mahalanobis-linkage hierarch. clustering}
 \label{sec:maha}
 
 Hierarchical clustering is an unsupervised machine learning method that aims to group the data points into clusters according to some \emph{linkage criterion}.
@@ -47,7 +47,7 @@ The optimized Mahalanobis HC achieves a speedup of over $1400\times$ compared to
 
 
 
-\section{Neighborhood-based dim. reduction}
+\section[Neighborhood-based dimensionality reduction]{Neighborhood-based dim. reduction}
 \label{sec:embedsom}
 
 
@@ -55,7 +55,7 @@ Complementary to hierarchical clustering, a different approach to displaying cyt
 
 The currently used dimensionality reduction tools are typically based on the principle of optimizing a low-dimensional embedding while preserving high-dimensional properties of interest. However, the most popular tools following this methodology, such as t-SNE~\cite{maaten2008visualizing}, UMAP~\cite{becht2019dimensionality} or TriMAP~\cite{amid2019trimap}, can suffer poor performance on large data due to the need to examine a nontrivial subset of $\binom{n}{2}$ relations (such as the pairwise distances) between $n$ data points~\cite{kratochvil2019generalized}. \emph{EmbedSOM} algorithm, introduced by Kratochvíl et al.~\cite{kratochvil2019generalized}, is designed to overcome this limitation. The costly parts of the previous methods can be omitted by creating a smaller model of the data obtained by \emph{self-organizing maps}. EmbedSOM uses the information of such an approximated manifold to compute the final embedding, retaining a competitive quality of the visualization.
 
-Let us overview the EmbedSOM algorithm. It assumes a set of $n$ high-dimensional points $X \in \R^{n \times d}$ and the smaller data model: a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional landmarks $l \in \R^{g \times 2}$. For each input point, $k < g$ nearest landmarks from $L$ are found and assigned scores according to their distance. Finally, we compute the embedding such that the difference between distances from $l$ landmarks and the embedded point and $L$ landmarks and the original point is minimized. The minimization problem is reducible to a linear system of equations with two variables.
+Let us overview the EmbedSOM algorithm. It assumes a set of $n$ high-dimensional points $X \in \R^{n \times d}$ and the smaller data model: a set of $g << n$ high-dimensional landmarks $L \in \R^{g \times d}$, and a set of $g$ low-dimensional landmarks $l \in \R^{g \times 2}$. For each input point, $k < g$ nearest landmarks from $L$ are found (this problem is also known as $k$-NN) and assigned scores according to their distance. Finally, we compute the embedding such that the difference between distances from $l$ landmarks and the embedded point and $L$ landmarks and the original point is minimized. The minimization problem is reducible to a linear system of equations with two variables.
 
 \subsubsection{Interactive opportunities of GPU implementation}
 
@@ -141,5 +141,5 @@ This chapter presented the work of implementing four scientific algorithms in th
 
 Further summarizing the optimization used, it comes as no surprise that the most important aspect to consider when designing an optimized implementation is memory. Memory complexity, memory access patterns, memory hierarchies, and data caching repeatedly occurred in our implementation designs and have contributed the most to performance improvements.
 
-Therefore, we dedicate the second chapter of this thesis to the methods for streamlining memory-related optimizations, which we collected during our optimization efforts and found them to be effective in aiding HPC programmers in writing optimized CPU or GPU code from scratch.
+Therefore, in the second chapter of this thesis we present novel methods for streamlining memory-related optimizations, which we collected during our optimization efforts and found them to be effective in aiding HPC programmers in writing optimized CPU or GPU code from scratch.
 

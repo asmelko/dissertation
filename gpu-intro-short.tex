@@ -1,4 +1,4 @@
-\chapter{Overview of GPU programming}
+\chapter{Introduction to GPU programming}
 \label{chap:gpu_intro}
 
 In this chapter, we provide an overview of the GPU hardware architecture and the CUDA programming model. We also discuss the main optimization techniques used in GPU programming, which are essential for achieving high performance on GPUs. The knowledge presented in this chapter serves as a foundation for the subsequent chapters, where we detail the GPU optimizations of scientific algorithms and describe the parallelization use-cases of the Noarr library.
@@ -44,7 +44,7 @@ In true data-parallel algorithms, this is generally not a big issue because thes
 \label{sec:divergence}
 
 The downside of the highly parallel SIMT architecture is the necessity to handle the divergence of execution paths in the code.
-If threads in a warp take different \texttt{if}-branch or their iteration count over a \texttt{while} loop does not match, the execution of these diverging paths will be serialized.
+If threads in a warp take different \texttt{if}-branch or their iteration count over a \texttt{while} loop does not match, the execution of these diverging paths will be serialized such that only the threads active in \emph{the same execution path} will be executed in lockstep.
 
 \paragraph{Thread occupancy}
 \label{sec:occupancy}
